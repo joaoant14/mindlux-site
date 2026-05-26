@@ -1272,8 +1272,6 @@
     const state = {
       currentScreenIndex: 0,
       responses: {}, // Armazena respostas (Ex: { P1: 'A', P2: 'C', P7: [0, 4] })
-      nome: "",
-      email: "",
       scores: { A: 0, B: 0, C: 0, D: 0 },
       winnerProfile: "",
       percentual: 51,
@@ -1485,7 +1483,7 @@
       const padroesText = getConfirmingPatterns(state.winnerProfile, state.responses["P7"] || []);
 
       return text
-        .replaceAll("[NOME]", state.nome)
+        .replaceAll("[NOME]", "Sua sombra dominante é")
         .replaceAll("[ÁREA]", areaText)
         .replaceAll("[PADRÕES]", padroesText)
         .replaceAll("[TEMPO]", tempoText)
@@ -1996,92 +1994,6 @@
         }
       },
 
-      // 16. TELA DE CAPTURA DE E-MAIL
-      {
-        id: "email_capture",
-        type: "email_capture",
-        render: () => `
-          <div class="screen">
-            <div class="question-header">
-              <span class="welcome-badge">✧ Perfil Identificado</span>
-              <h2 class="question-title" style="font-size: 1.85rem; margin-top: 6px;">Seu perfil de sombra está pronto.</h2>
-              <p class="text-body" style="margin: 10px auto 0 auto; font-size: 1rem; line-height: 1.5; max-width: 480px; text-align: center; padding: 0;">
-                Digite seu nome e seu melhor e-mail para revelar o resultado completo.
-              </p>
-            </div>
-            
-            <form id="email-capture-form" class="capture-form" novalidate>
-              <div class="input-group" id="name-group">
-                <label for="input-user-name" class="input-label">Primeiro nome</label>
-                <input type="text" id="input-user-name" class="input-field" placeholder="Ex: João" required autocomplete="given-name">
-                <span class="inline-error-msg" id="name-error">Insira o seu nome de forma válida.</span>
-              </div>
-              
-              <div class="input-group" id="email-group">
-                <label for="input-user-email" class="input-label">Seu melhor e-mail</label>
-                <input type="email" id="input-user-email" class="input-field" placeholder="Ex: nome@provedor.com" required autocomplete="email">
-                <span class="inline-error-msg" id="email-error">Insira um endereço de e-mail válido.</span>
-              </div>
-              
-              <button type="submit" class="btn-primary" style="margin-top: 8px; width: 100%;">Revelar meu resultado →</button>
-            </form>
-            <span class="microcopy-below">Seus dados estão seguros. Sem spam.</span>
-          </div>
-        `,
-        setup: () => {
-          const form = document.getElementById("email-capture-form");
-          const nameInput = document.getElementById("input-user-name");
-          const emailInput = document.getElementById("input-user-email");
-
-          // Preenche se já houver dados
-          if (state.nome) nameInput.value = state.nome;
-          if (state.email) emailInput.value = state.email;
-
-          form.addEventListener("submit", (e) => {
-            e.preventDefault();
-            
-            let isNameValid = nameInput.value.trim().length >= 2;
-            let isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim());
-
-            if (!isNameValid) {
-              document.getElementById("name-group").classList.add("has-error");
-            } else {
-              document.getElementById("name-group").classList.remove("has-error");
-            }
-
-            if (!isEmailValid) {
-              document.getElementById("email-group").classList.add("has-error");
-            } else {
-              document.getElementById("email-group").classList.remove("has-error");
-            }
-
-            if (isNameValid && isEmailValid) {
-              const rawName = nameInput.value.trim();
-              state.nome = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
-              state.email = emailInput.value.trim();
-              
-              // Dispara o Pixel do Facebook para Lead
-              fbq('track', 'Lead');
-              
-              nextScreen();
-            }
-          });
-
-          // Limpa erro ao digitar
-          nameInput.addEventListener("input", () => {
-            if (nameInput.value.trim().length >= 2) {
-              document.getElementById("name-group").classList.remove("has-error");
-            }
-          });
-
-          emailInput.addEventListener("input", () => {
-            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim())) {
-              document.getElementById("email-group").classList.remove("has-error");
-            }
-          });
-        }
-      },
-
       // 17. TELA DE ANÁLISE — Loading
       {
         id: "analysis",
@@ -2377,9 +2289,7 @@
                 upsell: upsellAccepted,
                 valorUpsell: valorUpsell,
                 valorTotal: valorTotal,
-                perfil: perfilName,
-                nome: state.nome,
-                email: state.email
+                perfil: perfilName
               });
               
               // Dispara o Pixel do Facebook para InitiateCheckout
@@ -2578,11 +2488,11 @@
           <div class="affirmation-box" style="padding: 40px 20px;">
             <span class="affirmation-badge" style="font-size: 2.5rem; margin-bottom: 24px;">✧</span>
             <h1 style="font-family: var(--font-serif); font-size: 2rem; color: var(--color-text-main); line-height: 1.4; text-align: center; margin-bottom: 20px;">
-              Obrigado, ${state.nome}.
+              Obrigado!
             </h1>
             <p style="font-family: var(--font-sans); font-size: 1.15rem; color: var(--color-text-secondary); line-height: 1.7; text-align: center; max-width: 500px;">
               Seu acesso está sendo preparado.<br>
-              Em instantes você receberá um e-mail em <strong>${state.email}</strong>.
+              Em instantes você receberá um e-mail de confirmação.
             </p>
           </div>
         </div>

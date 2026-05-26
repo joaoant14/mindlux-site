@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindLux</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1310591816664170');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1310591816664170&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:              #F2F5F7;
+  --bg-white:        #FFFFFF;
+  --text:            #1C2B35;
+  --text-mid:        #4A6070;
+  --text-soft:       #8A9DAA;
+  --accent:          #819FB0;
+  --accent-dark:     #5A7F94;
+  --accent-light:    #A2B8C4;
+  --accent-lighter:  #D1DCE1;
+  --border:          #DDE6EB;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 60px;
+  background: rgba(242,245,247,0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.nav-logo img {
+  height: 34px;
+  width: auto;
+  filter: brightness(0) saturate(100%) invert(62%) sepia(18%) saturate(400%) hue-rotate(170deg) brightness(90%);
+}
+
+.nav-wordmark {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+}
+
+.nav-btn {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 8px;
+  padding: 10px 22px;
+  text-decoration: none;
+  transition: background .22s, transform .2s;
+}
+.nav-btn:hover { background: var(--accent-dark); transform: translateY(-1px); }
+
+/* ─── HERO ─── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 140px 24px 100px;
+  position: relative;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  top: 10%; left: 50%;
+  transform: translateX(-50%);
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(129,159,176,.1) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero > * { position: relative; z-index: 1; }
+
+.hero-eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 24px;
+  opacity: 0;
+  animation: up .7s ease .1s forwards;
+}
+
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(42px, 6.5vw, 74px);
+  font-weight: 500;
+  line-height: 1.12;
+  color: var(--text);
+  max-width: 740px;
+  margin-bottom: 26px;
+  opacity: 0;
+  animation: up .7s ease .25s forwards;
+}
+
+.hero-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.hero-body {
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.72;
+  color: var(--text-mid);
+  max-width: 460px;
+  margin-bottom: 48px;
+  opacity: 0;
+  animation: up .7s ease .4s forwards;
+}
+
+.hero-btn {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: .05em;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 10px;
+  padding: 16px 38px;
+  text-decoration: none;
+  transition: background .22s, transform .2s, box-shadow .22s;
+  opacity: 0;
+  animation: up .7s ease .55s forwards;
+}
+.hero-btn:hover {
+  background: var(--accent-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(129,159,176,.22);
+}
+
+.hero-micro {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text-soft);
+  opacity: 0;
+  animation: up .7s ease .7s forwards;
+}
+
+/* ─── PILLARS ─── */
+.pillars {
+  background: var(--bg-white);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 96px 60px;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.section-eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(26px, 3.5vw, 38px);
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--text);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px 32px;
+  position: relative;
+  overflow: hidden;
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent-lighter);
+  transition: background .3s ease;
+}
+
+.card:hover { transform: translateY(-5px); box-shadow: 0 20px 48px rgba(129,159,176,.12); }
+.card:hover::after { background: var(--accent); }
+
+.card-icon {
+  font-size: 30px;
+  display: block;
+  margin-bottom: 20px;
+}
+
+.card-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.card-body {
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.72;
+  color: var(--text-mid);
+  margin-bottom: 22px;
+}
+
+.card-tag {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ─── QUOTE ─── */
+.quote {
+  padding: 100px 24px;
+  text-align: center;
+  background: var(--bg);
+}
+
+.quote-inner {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.quote-mark {
+  font-family: 'Playfair Display', serif;
+  font-size: 72px;
+  line-height: .6;
+  color: var(--accent-lighter);
+  display: block;
+  margin-bottom: 28px;
+}
+
+.quote-text {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(19px, 2.5vw, 26px);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--text);
+  margin-bottom: 28px;
+}
+
+.quote-text strong {
+  font-style: normal;
+  color: var(--accent-dark);
+}
+
+.quote-rule {
+  width: 36px;
+  height: 1px;
+  background: var(--accent-lighter);
+  margin: 0 auto 16px;
+}
+
+.quote-brand {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+/* ─── CTA ─── */
+.cta {
+  background: var(--bg-white);
+  border-top: 1px solid var(--border);
+  padding: 110px 24px;
+  text-align: center;
+}
+
+.cta-eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 18px;
+}
+
+.cta-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(30px, 4.5vw, 52px);
+  font-weight: 500;
+  line-height: 1.18;
+  color: var(--text);
+  max-width: 560px;
+  margin: 0 auto 18px;
+}
+
+.cta-title em { font-style: italic; color: var(--accent); }
+
+.cta-sub {
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--text-mid);
+  margin-bottom: 44px;
+}
+
+.cta-btn {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: .05em;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 10px;
+  padding: 18px 46px;
+  text-decoration: none;
+  transition: background .22s, transform .2s, box-shadow .22s;
+}
+.cta-btn:hover {
+  background: var(--accent-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(129,159,176,.22);
+}
+
+.cta-micro {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+/* ─── FOOTER ─── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 36px 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.footer-wordmark {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .2em;
+  color: var(--accent);
+}
+
+.footer-links {
+  display: flex;
+  gap: 28px;
+}
+
+.footer-links a {
+  font-size: 13px;
+  color: var(--text-soft);
+  text-decoration: none;
+  transition: color .2s;
+}
+.footer-links a:hover { color: var(--accent); }
+
+.footer-copy {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+/* ─── REVEAL ─── */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity .7s ease, transform .7s ease;
+}
+.reveal.on { opacity: 1; transform: none; }
+
+/* ─── ANIMATIONS ─── */
+@keyframes up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── MOBILE ─── */
+@media (max-width: 900px) {
+  nav { padding: 16px 20px; }
+  .pillars { padding: 72px 20px; }
+  .pillars-grid { grid-template-columns: 1fr; }
+  footer { flex-direction: column; text-align: center; }
+  .footer-links { flex-wrap: wrap; justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <span class="nav-wordmark">MINDLUX</span>
+  </a>
+  <a href="/triagem-de-padroes" class="nav-btn">Descobrir meu perfil</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <p class="hero-eyebrow">Desenvolvimento Interior</p>
+  <h1 class="hero-title">Presença, clareza<br>e <em>autenticidade</em></h1>
+  <p class="hero-body">Tornamos práticos e acessíveis os 3 pilares com o poder de transformar uma vida de dentro pra fora.</p>
+  <a href="/triagem-de-padroes" class="hero-btn">Descobrir meu perfil de sombra →</a>
+  <p class="hero-micro">3 minutos · Gratuito</p>
+</section>
+
+<!-- PILLARS -->
+<section class="pillars">
+  <div class="section-header">
+    <p class="section-eyebrow reveal">Os três pilares</p>
+    <h2 class="section-title reveal">Nossa missão é tornar práticos e acessíveis os 3 pilares que iluminam a mente humana.</h2>
+  </div>
+
+  <div class="pillars-grid">
+    <div class="card reveal">
+      <span class="card-icon">💨</span>
+      <h3 class="card-title">Respiração</h3>
+      <p class="card-body">Sua respiração é a única função do corpo simultaneamente automática e consciente. Uma porta de acesso direto ao sistema nervoso: a ferramenta mais rápida que existe para mudar seu estado interno.</p>
+      <span class="card-tag">Regulação · Sistema Nervoso</span>
+    </div>
+
+    <div class="card reveal" style="transition-delay:.12s">
+      <span class="card-icon">🧘</span>
+      <h3 class="card-title">Meditação</h3>
+      <p class="card-body">Décadas de neurociência confirmam o que praticantes sabem há milênios: meditação muda a estrutura do cérebro. Treinar esse músculo é aprender a responder em vez de reagir.</p>
+      <span class="card-tag">Clareza · Foco · Presença</span>
+    </div>
+
+    <div class="card reveal" style="transition-delay:.24s">
+      <span class="card-icon">🌑</span>
+      <h3 class="card-title">Shadow Work</h3>
+      <p class="card-body">Carl Jung identificou que cada um de nós carrega uma sombra: tudo que rejeitamos de nós mesmos. O shadow work é o processo de integrá-la, recuperando a energia e a autenticidade perdidas.</p>
+      <span class="card-tag">Integração · Autenticidade</span>
+    </div>
+  </div>
+</section>
+
+<!-- QUOTE -->
+<section class="quote">
+  <div class="quote-inner">
+    <span class="quote-mark reveal">"</span>
+    <p class="quote-text reveal">
+      Esses três pilares regulam o sistema nervoso, claream a mente e integram o que foi rejeitado em você. <strong>O resultado não é perfeição: é presença, clareza e autenticidade.</strong>
+    </p>
+    <div class="quote-rule reveal"></div>
+    <p class="quote-brand reveal">MindLux</p>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta" id="quiz">
+  <p class="cta-eyebrow reveal">Por onde começar</p>
+  <h2 class="cta-title reveal">Descubra qual sombra está <em>operando em você</em></h2>
+  <p class="cta-sub reveal">3 minutos. Um diagnóstico preciso. Um caminho concreto.</p>
+  <a href="/triagem-de-padroes" class="cta-btn reveal">Fazer o quiz gratuito →</a>
+  <p class="cta-micro reveal">Suas respostas são confidenciais</p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a href="#" class="footer-logo">
+    <span class="footer-wordmark">MINDLUX</span>
+  </a>
+  <div class="footer-links">
+    <a href="#">Início</a>
+    <a href="#quiz">O Quiz</a>
+    <a href="mailto:contato@mindlux.com">contato@mindlux.com</a>
+  </div>
+  <p class="footer-copy">© 2025 MindLux</p>
+</footer>
+
+<script>
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('on'); obs.unobserve(e.target); }
+  });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+
+</body>
+</html>

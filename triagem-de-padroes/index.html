@@ -1,0 +1,2597 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <title>Quiz MindLux — Diagnóstico de Sombra</title>
+  
+  <!-- Meta tags SEO -->
+  <meta name="description" content="Quiz MindLux: Identifique qual parte de você está operando nas sombras e descubra o caminho concreto para integrá-la.">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Google Fonts importados diretamente -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+  
+  <!-- Favicon sutil -->
+  <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✧</text></svg>">
+
+  <style>
+    /* ==========================================================================
+       MINDLUX DESIGN SYSTEM & PRESET STYLES
+       ========================================================================== */
+    :root {
+      --color-primary: #4B3FD4;
+      --color-primary-hover: #6358E8;
+      --color-primary-glow: #8B82F0;
+      --color-primary-subtle: rgba(75, 63, 212, 0.18);
+      --color-bg-main: #08071A;
+      --color-bg-card: #100F2E;
+      --color-border: #2A2560;
+      --color-text-main: #EBE9F8;
+      --color-text-secondary: #9490B8;
+      --color-integration: #22B8A0;
+      --color-bg-affirmation: #0A1F1D;
+      
+      --color-buy: #1A9E6E;
+      --color-buy-hover: #22B8A0;
+      --color-bg-product: #0D0D24;
+      --color-bg-bump: #0A0A1F;
+      --color-bump-active: rgba(26, 158, 110, 0.12);
+      
+      --font-serif: "Playfair Display", Georgia, serif;
+      --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+      
+      --transition-fade: 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      --transition-spring: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      
+      --border-radius-card: 24px;
+      --border-radius-btn: 12px;
+      --border-radius-opt: 16px;
+      
+      --container-max-width: 640px;
+    }
+
+    /* Base Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 100%;
+      min-height: 100vh;
+      background-color: var(--color-bg-main);
+      color: var(--color-text-main);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: background-color var(--transition-fade);
+      position: relative;
+    }
+
+    body.affirmation-mode {
+      background-color: var(--color-bg-affirmation);
+    }
+
+    /* Fundo Gradiente Onírico */
+    body::before {
+      content: "";
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(75, 63, 212, 0.15) 0%, rgba(8, 7, 26, 0) 70%);
+      top: -100px;
+      left: -100px;
+      pointer-events: none;
+      z-index: 1;
+      animation: float 8s infinite ease-in-out;
+    }
+
+    body::after {
+      content: "";
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(139, 130, 240, 0.1) 0%, rgba(8, 7, 26, 0) 70%);
+      bottom: -150px;
+      right: -150px;
+      pointer-events: none;
+      z-index: 1;
+      animation: float 12s infinite ease-in-out reverse;
+    }
+
+    /* Top Progress Bar Container */
+    .progress-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background-color: rgba(235, 233, 248, 0.05);
+      z-index: 1000;
+      opacity: 1;
+      transition: opacity var(--transition-fade);
+    }
+
+    .progress-container.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background-color: var(--color-primary);
+      width: 0%;
+      box-shadow: 0 0 10px var(--color-primary-glow);
+      transition: width var(--transition-fade);
+    }
+
+    /* Core Layout */
+    .app-container {
+      width: 100%;
+      max-width: var(--container-max-width);
+      padding: 40px 20px;
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .quiz-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Back Button Container */
+    .back-button-container {
+      width: 100%;
+      min-height: 40px;
+      display: flex;
+      justify-content: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .btn-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: none;
+      color: var(--color-text-secondary);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 6px 0;
+      transition: color var(--transition-fade), transform var(--transition-fade);
+    }
+
+    .btn-back:hover {
+      color: var(--color-text-main);
+      transform: translateX(-3px);
+    }
+
+    /* Screen Wrapper & Custom Fade Transitions */
+    .screen {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transform: translateY(15px);
+      animation: screenFadeIn var(--transition-fade) forwards;
+      will-change: transform, opacity;
+    }
+
+    .screen.fade-out {
+      animation: screenFadeOut var(--transition-fade) forwards;
+    }
+
+    @keyframes screenFadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes screenFadeOut {
+      to {
+        opacity: 0;
+        transform: translateY(-15px);
+      }
+    }
+
+    /* Badge Welcome */
+    .badge-welcome {
+      align-self: center;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      color: var(--color-primary-glow);
+      margin-bottom: 20px;
+      font-weight: 600;
+      text-shadow: 0 0 8px rgba(139, 130, 240, 0.35);
+    }
+
+    /* Typography */
+    h1, h2, h3 {
+      font-family: var(--font-serif);
+      font-weight: 500;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
+      color: var(--color-text-main);
+    }
+
+    .headline-intro {
+      font-size: 2.2rem;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    @media (min-width: 600px) {
+      .headline-intro {
+        font-size: 2.8rem;
+      }
+    }
+
+    .text-body {
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: var(--color-text-secondary);
+      line-height: 1.65;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .text-body-left {
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: var(--color-text-secondary);
+      line-height: 1.65;
+      text-align: left;
+    }
+
+    /* Cards/Options */
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .option-card {
+      background-color: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-opt);
+      padding: 18px 20px;
+      cursor: pointer;
+      text-align: left;
+      outline: none;
+      font-family: var(--font-sans);
+      color: var(--color-text-main);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      user-select: none;
+      transition: border-color var(--transition-fade), background-color var(--transition-fade), transform var(--transition-fade), box-shadow var(--transition-fade);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      min-height: 60px;
+    }
+
+    .option-card:hover {
+      border-color: rgba(139, 130, 240, 0.45);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+    }
+
+    .option-card:active {
+      transform: translateY(0);
+    }
+
+    .option-card.selected {
+      background-color: var(--color-primary-subtle);
+      border-color: var(--color-primary);
+      box-shadow: 0 0 18px rgba(75, 63, 212, 0.25);
+    }
+
+    .option-emoji {
+      font-size: 1.4rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .option-text {
+      font-size: 1.02rem;
+      font-weight: 300;
+      line-height: 1.5;
+      flex-grow: 1;
+      color: var(--color-text-main);
+    }
+
+    /* Custom Checked Indicator on Right */
+    .option-marker {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1.5px solid var(--color-text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-left: auto;
+      transition: all var(--transition-fade);
+    }
+
+    .option-card.selected .option-marker {
+      background-color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+
+    .option-marker::after {
+      content: "✓";
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: var(--color-text-main);
+      opacity: 0;
+      transform: scale(0.5);
+      transition: all var(--transition-fade);
+    }
+
+    .option-card.selected .option-marker::after {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: var(--color-text-main);
+      border: none;
+      border-radius: var(--border-radius-btn);
+      padding: 16px 36px;
+      font-family: var(--font-sans);
+      font-size: 1.05rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color var(--transition-fade), transform var(--transition-fade), box-shadow var(--transition-fade);
+      text-align: center;
+      box-shadow: 0 4px 18px rgba(75, 63, 212, 0.35);
+      outline: none;
+      align-self: center;
+      min-width: 200px;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--color-primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(99, 88, 232, 0.55);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary.hidden-btn {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+    }
+    
+    .btn-primary.show-btn {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .microcopy-below {
+      font-size: 0.85rem;
+      color: var(--color-text-secondary);
+      text-align: center;
+      margin-top: 18px;
+      letter-spacing: 0.04em;
+    }
+
+    /* Question Screen Layout */
+    .question-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .question-subtitle {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--color-primary-glow);
+      margin-bottom: 10px;
+      display: inline-block;
+      font-weight: 500;
+    }
+
+    .question-title {
+      font-size: 1.7rem;
+      line-height: 1.35;
+      color: var(--color-text-main);
+      font-family: var(--font-serif);
+      margin-top: 4px;
+    }
+
+    /* Affirmation Screen CSS */
+    .affirmation-box {
+      text-align: center;
+      max-width: 580px;
+      align-self: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .affirmation-badge {
+      font-size: 2rem;
+      color: var(--color-integration);
+      margin-bottom: 20px;
+      text-shadow: 0 0 12px rgba(34, 184, 160, 0.4);
+      animation: pulse 3s infinite ease-in-out;
+    }
+
+    .affirmation-text-lead {
+      font-family: var(--font-serif);
+      font-size: 1.45rem;
+      line-height: 1.65;
+      color: var(--color-text-main);
+      margin-bottom: 32px;
+      font-weight: 400;
+      text-align: center;
+    }
+
+    @media (min-width: 600px) {
+      .affirmation-text-lead {
+        font-size: 1.65rem;
+      }
+    }
+
+    /* Thermometer Component styling */
+    .thermometer-wrapper {
+      width: 100%;
+      background: rgba(235, 233, 248, 0.03);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-card);
+      padding: 32px 24px;
+      margin: 24px 0 32px 0;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .thermometer-value {
+      font-family: var(--font-serif);
+      font-size: 4.5rem;
+      font-weight: 700;
+      color: var(--color-text-main);
+      line-height: 1;
+      margin-bottom: 8px;
+      text-shadow: 0 0 25px rgba(139, 130, 240, 0.45);
+    }
+
+    .thermometer-badge {
+      display: inline-block;
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      background: var(--color-primary-subtle);
+      color: var(--color-primary-glow);
+      border: 1px solid rgba(139, 130, 240, 0.2);
+      margin-bottom: 24px;
+    }
+
+    .thermometer-track {
+      width: 100%;
+      max-width: 440px;
+      height: 12px;
+      background: rgba(8, 7, 26, 0.7);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid rgba(235, 233, 248, 0.1);
+    }
+
+    .thermometer-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-glow) 100%);
+      border-radius: 6px;
+      box-shadow: 0 0 14px var(--color-primary-glow);
+      transition: width 1.8s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    /* Email Capture Form styling */
+    .capture-form {
+      width: 100%;
+      max-width: 440px;
+      margin: 28px auto 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--color-text-secondary);
+      font-weight: 500;
+    }
+
+    .input-field {
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-btn);
+      padding: 16px 18px;
+      font-family: var(--font-sans);
+      font-size: 1.05rem;
+      color: var(--color-text-main);
+      background-color: var(--color-bg-card);
+      outline: none;
+      transition: border-color var(--transition-fade), box-shadow var(--transition-fade), background-color var(--transition-fade);
+      width: 100%;
+    }
+
+    .input-field:focus {
+      border-color: var(--color-primary-glow);
+      box-shadow: 0 0 12px rgba(139, 130, 240, 0.25);
+      background-color: rgba(16, 15, 46, 0.95);
+    }
+
+    .input-field::placeholder {
+      color: rgba(148, 144, 184, 0.45);
+    }
+
+    .inline-error-msg {
+      font-size: 0.85rem;
+      color: #ff5252;
+      margin-top: 4px;
+      display: none;
+    }
+
+    .input-group.has-error .input-field {
+      border-color: #ff5252;
+    }
+
+    .input-group.has-error .inline-error-msg {
+      display: block;
+    }
+
+    /* Analysis Loading Screen styling */
+    .analysis-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      max-width: 460px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .spinner-ring-container {
+      position: relative;
+      width: 76px;
+      height: 76px;
+      margin-bottom: 36px;
+    }
+
+    .spinner-background-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border: 2px solid rgba(139, 130, 240, 0.08);
+      border-radius: 50%;
+    }
+
+    .spinner-spinning-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border: 2px solid transparent;
+      border-top-color: var(--color-primary-glow);
+      border-radius: 50%;
+      animation: rotate 1.2s infinite cubic-bezier(0.5, 0, 0.5, 1);
+    }
+
+    .spinner-center-star {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.35rem;
+      color: var(--color-primary-glow);
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    .analysis-steps-list {
+      width: 100%;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .analysis-step-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.05rem;
+      color: var(--color-text-secondary);
+      opacity: 0.3;
+      transition: all var(--transition-fade);
+    }
+
+    .analysis-step-row.active {
+      opacity: 1;
+      color: var(--color-text-main);
+    }
+
+    .analysis-step-row.completed {
+      opacity: 1;
+      color: var(--color-text-main);
+    }
+
+    .analysis-step-row.completed .step-row-icon {
+      color: var(--color-integration);
+      text-shadow: 0 0 6px rgba(34, 184, 160, 0.5);
+      font-weight: bold;
+    }
+
+    .step-row-icon {
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 500;
+    }
+
+    /* Result Screen Premium styling */
+    .result-outer-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .result-glow-header {
+      position: relative;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 0 16px 0;
+      z-index: 10;
+    }
+
+    .result-glow-halo {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(139, 130, 240, 0.16) 0%, rgba(8, 7, 26, 0) 70%);
+      z-index: -1;
+      filter: blur(25px);
+      pointer-events: none;
+      animation: pulse 4s infinite ease-in-out;
+    }
+
+    .result-top-badge {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.20em;
+      color: var(--color-primary-glow);
+      margin-bottom: 12px;
+      font-weight: 600;
+      text-shadow: 0 0 10px rgba(139, 130, 240, 0.3);
+    }
+
+    .result-main-title {
+      font-size: 2.1rem;
+      line-height: 1.3;
+      margin-bottom: 8px;
+      color: var(--color-text-main);
+    }
+
+    @media (min-width: 600px) {
+      .result-main-title {
+        font-size: 2.6rem;
+      }
+    }
+
+    .profile-glow-name {
+      color: var(--color-primary-glow);
+      font-family: var(--font-serif);
+      font-style: italic;
+      display: block;
+      margin-top: 6px;
+      font-size: 2.3rem;
+      text-shadow: 0 0 20px rgba(139, 130, 240, 0.35);
+    }
+
+    @media (min-width: 600px) {
+      .profile-glow-name {
+        font-size: 3rem;
+      }
+    }
+
+    /* 3D Orb Visual container */
+    .orb-visual-box {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      margin: 8px auto 24px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .orb-background-fog {
+      position: absolute;
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--color-primary-glow) 0%, rgba(8, 7, 26, 0.8) 75%);
+      opacity: 0.22;
+      animation: orbRotate 12s infinite linear;
+      filter: blur(8px);
+    }
+
+    .orb-core-sphere {
+      position: relative;
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--color-primary-glow) 0%, var(--color-primary) 50%, rgba(16, 15, 46, 0) 100%);
+      box-shadow: 0 0 30px rgba(139, 130, 240, 0.45), inset 0 0 18px rgba(75, 63, 212, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: float 4s infinite ease-in-out;
+    }
+
+    .orb-core-sphere::after {
+      content: "✧";
+      color: var(--color-text-main);
+      font-size: 1.7rem;
+      opacity: 0.9;
+      text-shadow: 0 0 8px var(--color-text-main);
+    }
+
+    /* Narrative text blocks */
+    .result-text-article {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      text-align: left;
+    }
+
+    .result-paragraph {
+      font-size: 1.1rem;
+      line-height: 1.7;
+      color: var(--color-text-secondary);
+      font-weight: 300;
+    }
+
+    .result-paragraph strong {
+      color: var(--color-text-main);
+      font-weight: 500;
+    }
+
+    /* Integration final block ("O que muda") */
+    .integration-box-card {
+      background-color: var(--color-bg-affirmation);
+      border: 1px solid rgba(34, 184, 160, 0.22);
+      border-radius: var(--border-radius-card);
+      padding: 28px 24px;
+      margin-top: 18px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .integration-box-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background-color: var(--color-integration);
+    }
+
+    .integration-box-title {
+      font-family: var(--font-serif);
+      font-size: 1.35rem;
+      color: var(--color-text-main);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .integration-box-title::before {
+      content: "✧";
+      color: var(--color-integration);
+      font-size: 1.1rem;
+      text-shadow: 0 0 6px rgba(34, 184, 160, 0.5);
+    }
+
+    .integration-box-text {
+      font-size: 1.08rem;
+      line-height: 1.7;
+      color: var(--color-integration);
+      opacity: 0.95;
+      font-weight: 300;
+    }
+
+    /* KEYFRAME ANIMATIONS */
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0px) scale(1);
+      }
+      50% {
+        transform: translateY(-8px) scale(1.02);
+      }
+    }
+
+    @keyframes rotate {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 0.6;
+        transform: scale(0.97) translate(-50%, -50%);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.03) translate(-50%, -50%);
+      }
+    }
+
+    @keyframes orbRotate {
+      0% {
+        transform: rotate(0deg) scale(1);
+      }
+      50% {
+        transform: rotate(180deg) scale(1.15);
+      }
+      100% {
+        transform: rotate(360deg) scale(1);
+      }
+    }
+
+    /* ==========================================================================
+       SALES SECTION & ORDER BUMP STYLES
+       ========================================================================== */
+    .sales-divider {
+      border: none;
+      height: 1px;
+      background-color: var(--color-primary);
+      box-shadow: 0 0 12px var(--color-primary-glow);
+      max-width: 120px;
+      margin: 24px auto;
+    }
+
+    .sales-transition-block {
+      max-width: 600px;
+      margin: 0 auto 36px auto;
+      text-align: center;
+      padding: 0 16px;
+    }
+
+    .sales-transition-title {
+      font-family: var(--font-serif);
+      font-size: 1.8rem;
+      line-height: 1.35;
+      margin-bottom: 24px;
+      color: var(--color-text-main);
+    }
+
+    @media (min-width: 600px) {
+      .sales-transition-title {
+        font-size: 2.2rem;
+      }
+    }
+
+    .sales-transition-title .color-int {
+      color: var(--color-integration);
+      display: block;
+      margin-top: 4px;
+    }
+
+    .sales-transition-paragraph {
+      font-family: var(--font-sans);
+      font-size: 1.05rem;
+      color: var(--color-text-secondary);
+      line-height: 1.7;
+      margin-bottom: 20px;
+      font-weight: 300;
+    }
+
+    .sales-profile-paragraph {
+      font-family: var(--font-sans);
+      font-size: 0.98rem;
+      font-style: italic;
+      color: var(--color-text-main);
+      line-height: 1.6;
+      margin-top: 16px;
+      font-weight: 300;
+    }
+
+    .product-card-wrapper {
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 24px rgba(75, 63, 212, 0.15);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--color-border);
+    }
+
+    .product-card {
+      background-color: var(--color-bg-product);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    @media (min-width: 600px) {
+      .product-card {
+        padding: 32px;
+      }
+    }
+
+    .product-card-label {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--color-text-secondary);
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+
+    .product-card-title {
+      font-family: var(--font-serif);
+      font-size: 1.8rem;
+      color: var(--color-text-main);
+      margin-bottom: 8px;
+    }
+
+    @media (min-width: 600px) {
+      .product-card-title {
+        font-size: 2.25rem;
+      }
+    }
+
+    .product-card-subtitle {
+      font-family: var(--font-sans);
+      font-size: 1.05rem;
+      color: var(--color-integration);
+      margin-bottom: 24px;
+      font-weight: 400;
+    }
+
+    .product-features-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .product-features-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-family: var(--font-sans);
+      color: var(--color-text-main);
+      font-size: 1rem;
+      font-weight: 300;
+      line-height: 1.5;
+    }
+
+    .feature-emoji {
+      font-size: 1.2rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .feature-text {
+      flex-grow: 1;
+    }
+
+    .product-price-block {
+      text-align: center;
+      margin: 24px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .price-old {
+      font-family: var(--font-sans);
+      color: var(--color-text-secondary);
+      text-decoration: line-through;
+      font-size: 1.05rem;
+    }
+
+    .price-current {
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 2.8rem;
+      color: var(--color-text-main);
+      line-height: 1.1;
+      text-shadow: 0 0 15px rgba(235, 233, 248, 0.1);
+    }
+
+    @media (min-width: 600px) {
+      .price-current {
+        font-size: 3.2rem;
+      }
+    }
+
+    .price-microcopy {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-style: italic;
+      color: var(--color-text-secondary);
+      margin-top: 4px;
+    }
+
+    .btn-buy-now {
+      width: 100%;
+      background-color: var(--color-buy);
+      color: var(--color-text-main);
+      border: none;
+      border-radius: 12px;
+      min-height: 52px;
+      font-family: var(--font-sans);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: background-color 0.25s ease, transform var(--transition-fade);
+      outline: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(26, 158, 110, 0.25);
+    }
+
+    @media (min-width: 600px) {
+      .btn-buy-now {
+        min-height: 56px;
+      }
+    }
+
+    .btn-buy-now:hover {
+      background-color: var(--color-buy-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(34, 184, 160, 0.45);
+    }
+
+    .btn-buy-now:active {
+      transform: translateY(0);
+    }
+
+    .product-guarantees {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: center;
+      align-items: center;
+    }
+
+    .product-guarantees p {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      line-height: 1.4;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Order Bump Container */
+    .order-bump {
+      background-color: var(--color-bg-bump);
+      border-top: 1px solid var(--color-border);
+      padding: 24px;
+      text-align: left;
+    }
+
+    .bump-container {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .bump-checkbox-wrapper {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Styled Checkbox */
+    .bump-styled-checkbox {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 2px solid var(--color-border);
+      background-color: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+      outline: none;
+    }
+
+    .bump-styled-checkbox.checked {
+      border-color: var(--color-buy);
+      background-color: var(--color-bump-active);
+    }
+
+    .bump-check-mark {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--color-buy);
+      opacity: 0;
+      transform: scale(0.6);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .bump-styled-checkbox.checked .bump-check-mark {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .bump-content {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-grow: 1;
+    }
+
+    .bump-title {
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 0.98rem;
+      color: var(--color-text-main);
+      line-height: 1.4;
+    }
+
+    .bump-description {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+
+    .bump-description strong {
+      color: var(--color-text-main);
+      font-weight: 500;
+    }
+
+    .bump-microcopy {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-style: italic;
+      color: var(--color-text-secondary);
+      margin-top: 4px;
+    }
+  </style>
+  <!-- Meta Pixel Code -->
+  <script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '1310591816664170');
+  fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=1310591816664170&ev=PageView&noscript=1"
+  /></noscript>
+  <!-- End Meta Pixel Code -->
+</head>
+<body>
+
+  <!-- Barra de Progresso no Topo do Viewport -->
+  <div id="progress-container" class="progress-container hidden" aria-label="Progresso do Quiz">
+    <div id="progress-bar" class="progress-bar"></div>
+  </div>
+
+  <!-- Contêiner Principal da Aplicação -->
+  <main class="app-container">
+    <div class="quiz-container">
+      
+      <!-- Back button container centralizado a nível de max-width -->
+      <div id="back-button-container" class="back-button-container"></div>
+      
+      <!-- Screen container principal onde serão injetados os estados -->
+      <div id="screen-viewport"></div>
+      
+    </div>
+  </main>
+
+  <script>
+    /* ==========================================================================
+       MINDLUX INTERACTIVE SHADOW WORK QUIZ LOGIC
+       ========================================================================== */
+
+    // --- ESTADO GLOBAL DA APLICAÇÃO (Mantido estritamente em memória) ---
+    const state = {
+      currentScreenIndex: 0,
+      responses: {}, // Armazena respostas (Ex: { P1: 'A', P2: 'C', P7: [0, 4] })
+      nome: "",
+      email: "",
+      scores: { A: 0, B: 0, C: 0, D: 0 },
+      winnerProfile: "",
+      percentual: 51,
+      nivelImpacto: "Moderado"
+    };
+
+    // --- DOM ELEMENT TARGETS ---
+    const progressContainer = document.getElementById("progress-container");
+    const progressBar = document.getElementById("progress-bar");
+    const backButtonContainer = document.getElementById("back-button-container");
+    const screenViewport = document.getElementById("screen-viewport");
+    const body = document.body;
+
+    // --- VARIÁVEIS DE TEXTO E MAPAS DE VALORES ---
+    const MAPA_AREA = {
+      A: "relacionamentos",
+      B: "exposição",
+      C: "projetos",
+      D: "sucesso",
+      E: "autocuidado"
+    };
+
+    const MAPA_TEMPO = {
+      1: "há pouco tempo",
+      2: "há anos",
+      3: "há tanto tempo que já parece parte de quem você é"
+    };
+
+    const MAPA_TENTOU = {
+      1: "com terapia",
+      2: "lendo sobre o assunto",
+      3: "com práticas por conta própria",
+      4: "na base da força de vontade",
+      5: "e está chegando agora ao seu primeiro passo real"
+    };
+
+    const PROGRESS_MAP = {
+      "P1": 10,
+      "P2": 20,
+      "P3": 30,
+      "P4": 40,
+      "P5": 50,
+      "P6": 60,
+      "P7": 70,
+      "thermometer": 80,
+      "P8": 90,
+      "P9": 100
+    };
+
+    // --- MAPA INTERNO DE PADRÕES POR PERFIL (Para injeção no resultado) ---
+    const PADROES_TEXTS = {
+      0: "procrastinar o que mais importa",
+      1: "agradar os outros antes de se agradar",
+      2: "ter dificuldade de dizer não",
+      3: "comparar suas conquistas com as dos outros",
+      4: "se criticar muito mais do que critica qualquer outra pessoa",
+      5: "evitar conflito mesmo quando ele é necessário",
+      6: "sabotar relacionamentos quando ficam sérios demais",
+      7: "diminuir suas conquistas na frente dos outros",
+      8: "travar na hora de aparecer ou se posicionar"
+    };
+
+    const PROFILE_CONFIRMERS = {
+      A: [1, 2, 5, 6], // Agradar, Dizer não, Evitar conflito, Sabotar relacionamentos
+      B: [3, 4, 7],    // Comparar, Autocrítica, Diminuir conquistas
+      C: [0, 4],       // Procrastinar, Autocrítica
+      D: [0, 5, 8]     // Procrastinar, Evitar conflito, Travar ao aparecer
+    };
+
+    // --- CÁLCULO DE PADRÕES CONFIRMADORES DINÂMICOS ---
+    function getConfirmingPatterns(winnerProfile, selectedIndices) {
+      const candidates = PROFILE_CONFIRMERS[winnerProfile] || [];
+      
+      // Filtra os que o usuário selecionou e que pertencem ao perfil dominante
+      let matched = selectedIndices.filter(idx => candidates.includes(idx));
+      
+      // Se selecionou menos de 2, adicionamos outros do perfil que não foram selecionados
+      if (matched.length < 2) {
+        for (let candidate of candidates) {
+          if (!matched.includes(candidate)) {
+            matched.push(candidate);
+          }
+          if (matched.length === 2) break;
+        }
+      }
+      
+      // Se ainda assim for menor que 2, adicionamos quaisquer selecionados que não sejam do perfil
+      if (matched.length < 2) {
+        for (let idx of selectedIndices) {
+          if (!matched.includes(idx)) {
+            matched.push(idx);
+          }
+          if (matched.length === 2) break;
+        }
+      }
+      
+      // Fallback absoluto de emergência
+      if (matched.length < 2) {
+        const absoluteFallbacks = [0, 4, 1, 8];
+        for (let fb of absoluteFallbacks) {
+          if (!matched.includes(fb)) {
+            matched.push(fb);
+          }
+          if (matched.length === 2) break;
+        }
+      }
+      
+      const p1 = PADROES_TEXTS[matched[0]];
+      const p2 = PADROES_TEXTS[matched[1]];
+      
+      return `${p1} e ${p2}`;
+    }
+
+    // --- MOTOR DE CÁLCULO DE PERFIS E TERMÔMETRO ---
+    function calculateResults() {
+      let scores = { A: 0, B: 0, C: 0, D: 0 };
+      
+      // Perguntas de 2 a 6 pontuam perfil
+      const scoringQuestions = ["P2", "P3", "P4", "P5", "P6"];
+      scoringQuestions.forEach(q => {
+        const val = state.responses[q];
+        if (val && scores[val] !== undefined) {
+          scores[val]++;
+        }
+      });
+      
+      // Encontrar maior pontuação
+      let maxScore = -1;
+      let candidates = [];
+      for (let p in scores) {
+        if (scores[p] > maxScore) {
+          maxScore = scores[p];
+          candidates = [p];
+        } else if (scores[p] === maxScore) {
+          candidates.push(p);
+        }
+      }
+      
+      let winner = candidates[0];
+      if (candidates.length > 1) {
+        // Empate: prevalece a resposta da Pergunta 5
+        const p5Ans = state.responses["P5"];
+        if (candidates.includes(p5Ans)) {
+          winner = p5Ans;
+        } else {
+          winner = candidates[0];
+        }
+      }
+      
+      state.scores = scores;
+      state.winnerProfile = winner;
+      
+      // Lógica do termômetro
+      const winnerScore = scores[winner];
+      const selectedPatterns = state.responses["P7"] || [];
+      const patternCount = selectedPatterns.length;
+      let percent = 51;
+      let level = "Moderado";
+      
+      if (winnerScore >= 4 && patternCount >= 6) {
+        percent = 88; // entre 85% e 92%
+        level = "Alto";
+      } else if (winnerScore >= 3 && patternCount >= 4) {
+        percent = 72; // entre 65% e 80%
+        level = "Moderado-Alto";
+      } else {
+        percent = 51; // entre 45% e 60%
+        level = "Moderado";
+      }
+      
+      state.percentual = percent;
+      state.nivelImpacto = level;
+      
+      return { winner, percent, level };
+    }
+
+    // --- RECOLHA DE TEXTOS DO LAUDO DO RESULTADO E MOTOR DE INJEÇÃO ---
+    const LAUDO_TEMPLATES = {
+      A: {
+        title: "A Sombra do Abandono",
+        anchor: "Em algum momento da sua vida, você aprendeu uma lição silenciosa: chegar perto demais de alguém é perigoso.",
+        body: "Desde então, uma parte de você passou a trabalhar nos bastidores para impedir que essa queda aconteça. É ela que faz você achar defeito em quem se aproxima, criar uma briga quando tudo está bom, ou se fechar exatamente quando a relação começa a ficar real. Não é sabotagem por sabotagem. É proteção. Essa parte está convencida de que, se você sair primeiro, dói menos do que ser deixado.\n\nVocê marcou que [PADRÕES]. Isso não é coincidência. É a mesma Sombra operando em ângulos diferentes da sua vida.\n\nO problema é que essa proteção virou uma prisão. Ela te afasta justamente das pessoas e das coisas que você mais quer perto. E você convive com isso [TEMPO].\n\nVocê já tentou resolver isso [TENTOU], e percebeu algo importante: entender o padrão não bastou para mudá-lo. Porque essa Sombra não vive na sua mente racional. Ela vive mais fundo. E é lá que ela precisa ser encontrada.",
+        integration: "O que muda quando você integra essa sombra: você para de afastar quem ama. Consegue receber afeto sem esperar o golpe. Confia sem precisar de garantia. E descobre que pode ser inteiro com alguém, e que as pessoas certas ficam."
+      },
+      B: {
+        title: "A Sombra da Indignidade",
+        anchor: "Existe uma frase que vive no fundo de você, mesmo que você nunca a tenha dito em voz alta: \"isso não é pra mim\".",
+        body: "Ela não aparece como um pensamento claro. Aparece como uma sensação, bem no momento em que algo bom está perto. Uma oportunidade, um elogio, um relacionamento, um próximo nível. É aí que essa parte de você entra em ação, e você, sem perceber, começa a agir como se não merecesse aquilo. Você se contenta com menos. Minimiza o que conquista. Recua bem na hora de receber.\n\nVocê marcou que [PADRÕES]. Cada um desses padrões é a mesma Sombra falando por um canal diferente.\n\nEssa Sombra não nasceu com você. Em algum ponto, você aprendeu que precisava merecer o amor, o reconhecimento, o sucesso, que nada disso poderia simplesmente ser seu. E você convive com esse peso [TEMPO].\n\nVocê já tentou [TENTOU], e ainda assim a sensação voltou. Não porque você não se esforçou. Mas porque essa crença não se desfaz com informação. Ela se desfaz quando você encontra a origem dela e finalmente a vê de frente.",
+        integration: "O que muda quando você integra essa sombra: você para de se sabotar na linha de chegada. Recebe sem culpa. Aceita o bom que chega sem desconfiar dele. E acorda sabendo que é suficiente, não pelo que faz, mas por quem é."
+      },
+      C: {
+        title: "A Sombra do Controle",
+        anchor: "Em algum momento, o mundo te ensinou que relaxar é arriscado. Que, se você não segurar tudo, alguma coisa vai desabar.",
+        body: "Hoje existe uma parte de você que precisa controlar: o resultado, as pessoas, o que vão pensar, cada detalhe. Ela se disfarça de responsabilidade, de capricho, de querer bem feito. Mas o que está por baixo é medo. E é essa parte que faz você travar num projeto até estar perfeito, que cria tensão nas relações, que não consegue descansar enquanto houver uma só variável solta.\n\nVocê marcou que [PADRÕES]. São expressões diferentes do mesmo mecanismo: o controle como escudo contra o imprevisível.\n\nEssa Sombra já te serviu. Provavelmente foi ela que te manteve de pé em épocas difíceis. Mas hoje ela cobra um preço alto, e você sente esse cansaço [TEMPO].\n\nVocê já tentou [TENTOU], e descobriu que entender o controle não faz você soltá-lo. Porque soltar não é uma decisão da mente. É algo que acontece quando a parte assustada de você finalmente se sente segura.",
+        integration: "O que muda quando você integra essa sombra: você confia no processo sem segurar cada detalhe. Termina e entrega sem o peso do perfeito. Deixa as pessoas chegarem sem um roteiro. E descobre que a vida não desaba quando você respira."
+      },
+      D: {
+        title: "A Sombra da Invisibilidade",
+        anchor: "Você tem coisas a dizer. Tem talento, ideias, uma presença que poderia ocupar muito mais espaço do que ocupa hoje.",
+        body: "Mas existe uma parte de você que puxa o freio toda vez que chega a hora de aparecer. Essa parte não é timidez. É um mecanismo de proteção. Em algum momento, você aprendeu que ser visto é arriscado, que aparecer atrai julgamento, cobrança, ou a chance de falhar na frente dos outros. Então essa Sombra te mantém na sombra. Ela faz você adiar, engolir a opinião, deixar outro levar o crédito, ficar pequeno numa sala onde você tinha muito a contribuir.\n\nVocê marcou que [PADRÕES]. Cada um é a mesma Sombra te convencendo de que ainda não é hora.\n\nO resultado é uma vida vivida com o volume baixo. E você percebe isso [TEMPO].\n\nVocê já tentou [TENTOU], e mesmo assim continua se encolhendo. Não por falta de vontade. Mas porque essa Sombra não responde a vontade. Ela responde a segurança.",
+        integration: "O que muda quando você integra essa sombra: você aparece sem pedir licença. Mostra o que faz sem travar. Ocupa seu espaço sabendo que tem direito a ele. E para de adiar a versão de você que o mundo ainda nem viu."
+      }
+    };
+
+    function injectVariables(text) {
+      const areaText = MAPA_AREA[state.responses["P1"]] || "seu dia a dia";
+      const tempoText = MAPA_TEMPO[state.responses["P8"]] || "há algum tempo";
+      const tentouText = MAPA_TENTOU[state.responses["P9"]] || "de várias maneiras";
+      const padroesText = getConfirmingPatterns(state.winnerProfile, state.responses["P7"] || []);
+
+      return text
+        .replaceAll("[NOME]", state.nome)
+        .replaceAll("[ÁREA]", areaText)
+        .replaceAll("[PADRÕES]", padroesText)
+        .replaceAll("[TEMPO]", tempoText)
+        .replaceAll("[TENTOU]", tentouText)
+        .replaceAll("[PERCENTUAL]", state.percentual);
+    }
+
+    // --- SEQUÊNCIA COMPLETA DE PERGUNTAS E TELAS ---
+    const SCREENS = [
+      // 2. PERGUNTA 1 de 9 — Área (não pontua perfil)
+      {
+        id: "P1",
+        type: "question",
+        render: () => `
+          <div class="screen">
+            <div class="question-header">
+              <span class="question-subtitle">Pergunta 1 de 9</span>
+              <h2 class="question-title">Com qual dessas situações você mais se identifica?</h2>
+            </div>
+            <div class="options-list">
+              <button class="option-card" data-val="A">
+                <span class="option-emoji">💔</span>
+                <span class="option-text">Nos meus relacionamentos. Alguém chega perto de verdade e eu dou um jeito de afastar, ou começo a achar defeito em tudo.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="B">
+                <span class="option-emoji">👁️</span>
+                <span class="option-text">Na hora de me mostrar. Não falo o que penso, não apareço, fico pequeno mesmo quando tenho algo a dizer.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="C">
+                <span class="option-emoji">📋</span>
+                <span class="option-text">Nos meus projetos. Começo empolgado e largo no meio, ou fico aperfeiçoando tanto que nunca termino.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="D">
+                <span class="option-emoji">⚡</span>
+                <span class="option-text">Quando as coisas vão bem. Chego perto de conseguir o que quero e, sem entender direito, faço algo que põe tudo a perder.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="E">
+                <span class="option-emoji">🌿</span>
+                <span class="option-text">Comigo mesmo. Largo a saúde, abandono as rotinas que me faziam bem, e me deixo sempre por último.</span>
+                <div class="option-marker"></div>
+              </button>
+            </div>
+          </div>
+        `,
+        setup: () => setupSingleChoice("P1")
+      },
+
+      // 3. AFIRMAÇÃO 1
+      {
+        id: "affirmation1",
+        type: "affirmation",
+        render: () => `
+          <div class="screen">
+            <div class="affirmation-box">
+              <span class="affirmation-badge">✧</span>
+              <h2 class="affirmation-text-lead">
+                Reconhecer isso já é o primeiro passo, e a maioria das pessoas nunca chega a dar.<br><br>
+                Olhar de frente para o próprio padrão exige uma honestidade que pouca gente tem. Você acabou de fazer isso.
+              </h2>
+              <button id="btn-affirmation1-next" class="btn-primary">Continuar →</button>
+            </div>
+          </div>
+        `,
+        setup: () => {
+          document.getElementById("btn-affirmation1-next").addEventListener("click", () => nextScreen());
+        }
+      },
+
+      // 4. PERGUNTA 2 de 9 — Mecanismo pelo medo (pontua perfil)
+      {
+        id: "P2",
+        type: "question",
+        render: () => `
+          <div class="screen">
+            <div class="question-header">
+              <span class="question-subtitle">Pergunta 2 de 9</span>
+              <h2 class="question-title">Quando você está prestes a se sabotar, o que pesa mais por dentro?</h2>
+            </div>
+            <div class="options-list">
+              <button class="option-card" data-val="A">
+                <span class="option-emoji">🛡️</span>
+                <span class="option-text">Um medo de que, se eu me entregar de verdade, vou acabar magoado ou abandonado.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="B">
+                <span class="option-emoji">🎁</span>
+                <span class="option-text">Uma sensação de que aquilo de bom não é pra mim, de que eu não mereço.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="C">
+                <span class="option-emoji">⚙️</span>
+                <span class="option-text">Um incômodo de não ter controle, de não saber como aquilo vai terminar.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="D">
+                <span class="option-emoji">🎭</span>
+                <span class="option-text">Um medo de que, se as coisas derem certo, vão esperar mais de mim do que eu consigo dar.</span>
+                <div class="option-marker"></div>
+              </button>
+            </div>
+          </div>
+        `,
+        setup: () => setupSingleChoice("P2")
+      },
+
+      // 5. PERGUNTA 3 de 9 — Mecanismo pelo desejo (pontua perfil)
+      {
+        id: "P3",
+        type: "question",
+        render: () => `
+          <div class="screen">
+            <div class="question-header">
+              <span class="question-subtitle">Pergunta 3 de 9</span>
+              <h2 class="question-title">O que você mais quer conseguir, mas sente que algo dentro de você não deixa?</h2>
+            </div>
+            <div class="options-list">
+              <button class="option-card" data-val="A">
+                <span class="option-emoji">🤝</span>
+                <span class="option-text">Me entregar de verdade pra alguém, sem ficar esperando o pior.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="B">
+                <span class="option-emoji">✨</span>
+                <span class="option-text">Receber as coisas boas que chegam sem sentir que não são pra mim.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="C">
+                <span class="option-emoji">🍃</span>
+                <span class="option-text">Deixar as coisas fluírem sem precisar controlar cada passo.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="D">
+                <span class="option-emoji">🔊</span>
+                <span class="option-text">Aparecer, me posicionar e ocupar meu espaço sem travar.</span>
+                <div class="option-marker"></div>
+              </button>
+            </div>
+          </div>
+        `,
+        setup: () => setupSingleChoice("P3")
+      },
+
+      // 6. AFIRMAÇÃO 2
+      {
+        id: "affirmation2",
+        type: "affirmation",
+        render: () => `
+          <div class="screen">
+            <div class="affirmation-box">
+              <span class="affirmation-badge">✧</span>
+              <h2 class="affirmation-text-lead">
+                O que você está descrevendo não é falta de força de vontade.<br><br>
+                É uma parte de você que aprendeu, em algum momento, que se sabotar era a forma mais segura de se proteger. Ela não é sua inimiga. Ela só nunca foi ouvida de verdade.<br><br>
+                É exatamente sobre isso que o seu resultado vai falar.
+              </h2>
+              <button id="btn-affirmation2-next" class="btn-primary">Continuar →</button>
+            </div>
+          </div>
+        `,
+        setup: () => {
+          document.getElementById("btn-affirmation2-next").addEventListener("click", () => nextScreen());
+        }
+      },
+
+      // 7. PERGUNTA 4 de 9 — Comportamento após sabotar (pontua perfil)
+      {
+        id: "P4",
+        type: "question",
+        render: () => `
+          <div class="screen">
+            <div class="question-header">
+              <span class="question-subtitle">Pergunta 4 de 9</span>
+              <h2 class="question-title">Quando você desiste de algo que importava, o que você costuma fazer logo depois?</h2>
+            </div>
+            <div class="options-list">
+              <button class="option-card" data-val="A">
+                <span class="option-emoji">🌀</span>
+                <span class="option-text">Fico remoendo sozinho. Sei que fui eu que me afastei, e isso fica pesando.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="B">
+                <span class="option-emoji">🚪</span>
+                <span class="option-text">Concluo que talvez aquilo nunca tenha sido mesmo pra mim.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="C">
+                <span class="option-emoji">📝</span>
+                <span class="option-text">Já começo a planejar como vou fazer diferente e melhor da próxima vez.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="D">
+                <span class="option-emoji">⏭️</span>
+                <span class="option-text">Passo pra frente rápido. Me ocupo com outra coisa pra não pensar naquilo.</span>
+                <div class="option-marker"></div>
+              </button>
+            </div>
+          </div>
+        `,
+        setup: () => setupSingleChoice("P4")
+      },
+
+      // 8. PERGUNTA 5 de 9 — O que é mais difícil / desempate (pontua perfil)
+      {
+        id: "P5",
+        type: "question",
+        render: () => `
+          <div class="screen">
+            <div class="question-header">
+              <span class="question-subtitle">Pergunta 5 de 9</span>
+              <h2 class="question-title">Olhando com honestidade, o que é mais difícil pra você?</h2>
+            </div>
+            <div class="options-list">
+              <button class="option-card" data-val="A">
+                <span class="option-emoji">🔓</span>
+                <span class="option-text">Confiar que alguém pode chegar perto e escolher ficar.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="B">
+                <span class="option-emoji">👑</span>
+                <span class="option-text">Acreditar que você merece as coisas boas que conquista.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="C">
+                <span class="option-emoji">🌬️</span>
+                <span class="option-text">Soltar o controle e confiar que vai dar certo sem você segurar tudo.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="D">
+                <span class="option-emoji">🪟</span>
+                <span class="option-text">Deixar que vejam quem você realmente é, sem se encolher.</span>
+                <div class="option-marker"></div>
+              </button>
+            </div>
+          </div>
+        `,
+        setup: () => setupSingleChoice("P5")
+      },
+
+      // 9. AFIRMAÇÃO 3
+      {
+        id: "affirmation3",
+        type: "affirmation",
+        render: () => `
+          <div class="screen">
+            <div class="affirmation-box">
+              <span class="affirmation-badge">✧</span>
+              <h2 class="affirmation-text-lead">
+                Quase ninguém fala sobre isso, mas ter dificuldade de receber é uma das formas mais silenciosas de autossabotagem que existe.<br><br>
+                Não é frescura, não é exagero. É um padrão real. E o simples fato de você conseguir reconhecê-lo em si mesmo já coloca você à frente da maioria.
+              </h2>
+              <button id="btn-affirmation3-next" class="btn-primary">Continuar →</button>
+            </div>
+          </div>
+        `,
+        setup: () => {
+          document.getElementById("btn-affirmation3-next").addEventListener("click", () => nextScreen());
+        }
+      },
+
+      // 10. PERGUNTA 6 de 9 — Relação com reconhecimento (pontua perfil)
+      {
+        id: "P6",
+        type: "question",
+        render: () => `
+          <div class="screen">
+            <div class="question-header">
+              <span class="question-subtitle">Pergunta 6 de 9</span>
+              <h2 class="question-title">Quando alguém te elogia ou reconhece o que você fez, o que acontece por dentro?</h2>
+            </div>
+            <div class="options-list">
+              <button class="option-card" data-val="A">
+                <span class="option-emoji">🔍</span>
+                <span class="option-text">Bate uma desconfiança. Fico esperando o momento em que a pessoa vai mudar de ideia sobre mim.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="B">
+                <span class="option-emoji">📉</span>
+                <span class="option-text">Acho, no fundo, que exageraram. Que não foi pra tanto.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="C">
+                <span class="option-emoji">📋</span>
+                <span class="option-text">Aceito, mas já penso em tudo que ainda podia ter feito melhor.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="D">
+                <span class="option-emoji">🏃</span>
+                <span class="option-text">Fico sem jeito e desvio rápido. Mudo de assunto pra sair dos holofotes.</span>
+                <div class="option-marker"></div>
+              </button>
+            </div>
+          </div>
+        `,
+        setup: () => setupSingleChoice("P6")
+      },
+
+      // 11. PERGUNTA 7 de 9 — Seleção múltipla de padrões (não pontua perfil)
+      {
+        id: "P7",
+        type: "question",
+        render: () => `
+          <div class="screen">
+            <div class="question-header">
+              <span class="question-subtitle">Pergunta 7 de 9</span>
+              <h2 class="question-title">Quais desses padrões você reconhece em você?</h2>
+              <span style="font-size: 0.95rem; color: var(--color-text-secondary); margin-top: 4px; display: inline-block;">Você pode marcar mais de uma opção.</span>
+            </div>
+            <div class="options-list">
+              <button class="option-card" data-index="0">
+                <span class="option-emoji">⏳</span>
+                <span class="option-text">Procrastinar o que mais importa</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-index="1">
+                <span class="option-emoji">🙋</span>
+                <span class="option-text">Agradar os outros antes de me agradar</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-index="2">
+                <span class="option-emoji">🙅</span>
+                <span class="option-text">Dificuldade de dizer não</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-index="3">
+                <span class="option-emoji">📊</span>
+                <span class="option-text">Comparar minhas conquistas com as dos outros</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-index="4">
+                <span class="option-emoji">🪞</span>
+                <span class="option-text">Me criticar muito mais do que critico qualquer outra pessoa</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-index="5">
+                <span class="option-emoji">🕊&zwj;♀️</span>
+                <span class="option-text">Evitar conflito mesmo quando ele é necessário</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-index="6">
+                <span class="option-emoji">💔</span>
+                <span class="option-text">Sabotar relacionamentos quando ficam sérios demais</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-index="7">
+                <span class="option-emoji">🔇</span>
+                <span class="option-text">Diminuir minhas conquistas na frente dos outros</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-index="8">
+                <span class="option-emoji">🫥</span>
+                <span class="option-text">Travar na hora de aparecer ou me posicionar</span>
+                <div class="option-marker"></div>
+              </button>
+            </div>
+            <button id="btn-p7-next" class="btn-primary hidden-btn" style="margin-top: 24px;">Ver meu termômetro →</button>
+          </div>
+        `,
+        setup: () => setupMultipleChoice()
+      },
+
+      // 12. TELA DO TERMÔMETRO (Exibe resultado e percentual)
+      {
+        id: "thermometer",
+        type: "thermometer",
+        render: () => `
+          <div class="screen">
+            <div class="question-header">
+              <span class="question-subtitle">Termômetro da Sombra</span>
+              <h2 class="question-title" style="font-size: 1.6rem;">Impacto da sua Sombra Dominante</h2>
+            </div>
+            
+            <div class="thermometer-wrapper">
+              <div class="thermometer-value" id="thermo-val">0%</div>
+              <div class="thermometer-badge" id="thermo-badge">Calculando...</div>
+              
+              <div class="thermometer-track" aria-hidden="true">
+                <div class="thermometer-fill" id="thermo-fill"></div>
+              </div>
+            </div>
+
+            <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; max-width: 540px; align-self: center;">
+              Isso significa que uma parte significativa das suas decisões, reações e padrões está sendo dirigida por algo que ainda não foi integrado.
+            </p>
+            
+            <button id="btn-thermo-next" class="btn-primary">Quero entender o que está por trás disso →</button>
+          </div>
+        `,
+        setup: () => {
+          // Garante cálculo recente
+          const results = calculateResults();
+          
+          const thermoValEl = document.getElementById("thermo-val");
+          const thermoBadgeEl = document.getElementById("thermo-badge");
+          const thermoFillEl = document.getElementById("thermo-fill");
+          
+          // Anima o percentual
+          thermoBadgeEl.innerText = results.level;
+          thermoValEl.innerText = `${results.percent}%`;
+          
+          // Atraso de micropausa para disparar a transição CSS de width
+          setTimeout(() => {
+            if (thermoFillEl) {
+              thermoFillEl.style.width = `${results.percent}%`;
+            }
+          }, 100);
+
+          document.getElementById("btn-thermo-next").addEventListener("click", () => nextScreen());
+        }
+      },
+
+      // 13. PERGUNTA 8 de 9 — Há quanto tempo (não pontua)
+      {
+        id: "P8",
+        type: "question",
+        render: () => `
+          <div class="screen">
+            <div class="question-header">
+              <span class="question-subtitle">Pergunta 8 de 9</span>
+              <h2 class="question-title">Há quanto tempo você convive com esse padrão?</h2>
+            </div>
+            <div class="options-list">
+              <button class="option-card" data-val="1">
+                <span class="option-emoji">🌱</span>
+                <span class="option-text">Faz pouco tempo que comecei a perceber isso com clareza.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="2">
+                <span class="option-emoji">📅</span>
+                <span class="option-text">Já faz alguns anos que percebo, mas nunca consegui mudar.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="3">
+                <span class="option-emoji">⏳</span>
+                <span class="option-text">Faz muito tempo. Às vezes parece que sempre foi assim.</span>
+                <div class="option-marker"></div>
+              </button>
+            </div>
+          </div>
+        `,
+        setup: () => setupSingleChoice("P8")
+      },
+
+      // 14. PERGUNTA 9 de 9 — O que já tentou (não pontua)
+      {
+        id: "P9",
+        type: "question",
+        render: () => `
+          <div class="screen">
+            <div class="question-header">
+              <span class="question-subtitle">Pergunta 9 de 9</span>
+              <h2 class="question-title">O que você já tentou para mudar isso?</h2>
+            </div>
+            <div class="options-list">
+              <button class="option-card" data-val="1">
+                <span class="option-emoji">🛋️</span>
+                <span class="option-text">Terapia ou acompanhamento psicológico.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="2">
+                <span class="option-emoji">📚</span>
+                <span class="option-text">Livros, conteúdos, vídeos sobre o tema.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="3">
+                <span class="option-emoji">🧘</span>
+                <span class="option-text">Meditação, journaling ou práticas por conta própria.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="4">
+                <span class="option-emoji">💪</span>
+                <span class="option-text">Sinceramente, só força de vontade.</span>
+                <div class="option-marker"></div>
+              </button>
+              <button class="option-card" data-val="5">
+                <span class="option-emoji">🌟</span>
+                <span class="option-text">Ainda não tentei nada de verdade. Esse é meu primeiro passo.</span>
+                <div class="option-marker"></div>
+              </button>
+            </div>
+          </div>
+        `,
+        setup: () => setupSingleChoice("P9")
+      },
+
+      // 15. AFIRMAÇÃO 4 — Ponte para o resultado
+      {
+        id: "affirmation4",
+        type: "affirmation",
+        render: () => `
+          <div class="screen">
+            <div class="affirmation-box">
+              <span class="affirmation-badge">✧</span>
+              <h2 class="affirmation-text-lead">
+                Suas respostas formaram um padrão muito claro.<br><br>
+                Existe uma sombra específica operando por trás da sua autossabotagem, e ela tem nome, tem origem e tem uma forma de ser integrada.<br><br>
+                Seu resultado está pronto.
+              </h2>
+              <button id="btn-affirmation4-next" class="btn-primary">Ver meu resultado →</button>
+            </div>
+          </div>
+        `,
+        setup: () => {
+          document.getElementById("btn-affirmation4-next").addEventListener("click", () => nextScreen());
+        }
+      },
+
+      // 16. TELA DE CAPTURA DE E-MAIL
+      {
+        id: "email_capture",
+        type: "email_capture",
+        render: () => `
+          <div class="screen">
+            <div class="question-header">
+              <span class="welcome-badge">✧ Perfil Identificado</span>
+              <h2 class="question-title" style="font-size: 1.85rem; margin-top: 6px;">Seu perfil de sombra está pronto.</h2>
+              <p class="text-body" style="margin: 10px auto 0 auto; font-size: 1rem; line-height: 1.5; max-width: 480px; text-align: center; padding: 0;">
+                Digite seu nome e seu melhor e-mail para revelar o resultado completo.
+              </p>
+            </div>
+            
+            <form id="email-capture-form" class="capture-form" novalidate>
+              <div class="input-group" id="name-group">
+                <label for="input-user-name" class="input-label">Primeiro nome</label>
+                <input type="text" id="input-user-name" class="input-field" placeholder="Ex: João" required autocomplete="given-name">
+                <span class="inline-error-msg" id="name-error">Insira o seu nome de forma válida.</span>
+              </div>
+              
+              <div class="input-group" id="email-group">
+                <label for="input-user-email" class="input-label">Seu melhor e-mail</label>
+                <input type="email" id="input-user-email" class="input-field" placeholder="Ex: nome@provedor.com" required autocomplete="email">
+                <span class="inline-error-msg" id="email-error">Insira um endereço de e-mail válido.</span>
+              </div>
+              
+              <button type="submit" class="btn-primary" style="margin-top: 8px; width: 100%;">Revelar meu resultado →</button>
+            </form>
+            <span class="microcopy-below">Seus dados estão seguros. Sem spam.</span>
+          </div>
+        `,
+        setup: () => {
+          const form = document.getElementById("email-capture-form");
+          const nameInput = document.getElementById("input-user-name");
+          const emailInput = document.getElementById("input-user-email");
+
+          // Preenche se já houver dados
+          if (state.nome) nameInput.value = state.nome;
+          if (state.email) emailInput.value = state.email;
+
+          form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            
+            let isNameValid = nameInput.value.trim().length >= 2;
+            let isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim());
+
+            if (!isNameValid) {
+              document.getElementById("name-group").classList.add("has-error");
+            } else {
+              document.getElementById("name-group").classList.remove("has-error");
+            }
+
+            if (!isEmailValid) {
+              document.getElementById("email-group").classList.add("has-error");
+            } else {
+              document.getElementById("email-group").classList.remove("has-error");
+            }
+
+            if (isNameValid && isEmailValid) {
+              const rawName = nameInput.value.trim();
+              state.nome = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
+              state.email = emailInput.value.trim();
+              
+              // Dispara o Pixel do Facebook para Lead
+              fbq('track', 'Lead');
+              
+              nextScreen();
+            }
+          });
+
+          // Limpa erro ao digitar
+          nameInput.addEventListener("input", () => {
+            if (nameInput.value.trim().length >= 2) {
+              document.getElementById("name-group").classList.remove("has-error");
+            }
+          });
+
+          emailInput.addEventListener("input", () => {
+            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim())) {
+              document.getElementById("email-group").classList.remove("has-error");
+            }
+          });
+        }
+      },
+
+      // 17. TELA DE ANÁLISE — Loading
+      {
+        id: "analysis",
+        type: "analysis",
+        render: () => `
+          <div class="screen">
+            <div class="analysis-container">
+              
+              <div class="spinner-ring-container" aria-hidden="true">
+                <div class="spinner-background-ring"></div>
+                <div class="spinner-spinning-ring"></div>
+                <div class="spinner-center-star">✧</div>
+              </div>
+              
+              <div class="analysis-steps-list">
+                <div class="analysis-step-row" id="loading-row-1">
+                  <span class="step-row-icon" id="loading-icon-1">&bull;</span>
+                  <span>Área de maior impacto identificada</span>
+                </div>
+                <div class="analysis-step-row" id="loading-row-2">
+                  <span class="step-row-icon" id="loading-icon-2">&bull;</span>
+                  <span>Padrão de autossabotagem mapeado</span>
+                </div>
+                <div class="analysis-step-row" id="loading-row-3">
+                  <span class="step-row-icon" id="loading-icon-3">&bull;</span>
+                  <span>Nível de impacto calculado</span>
+                </div>
+                <div class="analysis-step-row" id="loading-row-4">
+                  <span class="step-row-icon" id="loading-icon-4">&bull;</span>
+                  <span>Sombra dominante reconhecida</span>
+                </div>
+                <div class="analysis-step-row" id="loading-row-5">
+                  <span class="step-row-icon" id="loading-icon-5">&bull;</span>
+                  <span style="font-weight: 500;">Preparando seu resultado personalizado...</span>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        `,
+        setup: () => {
+          const delayBase = 600;
+          
+          // Animação sequencial um por um
+          const steps = [1, 2, 3, 4, 5];
+          steps.forEach((step, index) => {
+            setTimeout(() => {
+              const row = document.getElementById(`loading-row-${step}`);
+              if (row) {
+                row.classList.add("active");
+              }
+              
+              if (step < 5) {
+                setTimeout(() => {
+                  const completedRow = document.getElementById(`loading-row-${step}`);
+                  const completedIcon = document.getElementById(`loading-icon-${step}`);
+                  if (completedRow && completedIcon) {
+                    completedRow.classList.add("completed");
+                    completedIcon.innerHTML = "✓";
+                  }
+                }, 600);
+              }
+            }, index * delayBase);
+          });
+
+          // Duração total: 4000ms. Depois disso avança.
+          setTimeout(() => {
+            calculateResults();
+            nextScreen();
+          }, 4000);
+        }
+      },
+
+      // 18. TELA DE RESULTADO — 4 variações dinâmicas
+      {
+        id: "result",
+        type: "result",
+        render: () => {
+          const winner = state.winnerProfile;
+          const template = LAUDO_TEMPLATES[winner] || LAUDO_TEMPLATES.A;
+          
+          const profileTitle = template.title;
+          const anchorPhrase = template.anchor;
+          
+          // Divide parágrafos com quebra de linha simples
+          const paragraphs = template.body.split("\n\n");
+          const injectedParagraphsHtml = paragraphs
+            .map(p => `<p class="result-paragraph">${injectVariables(p)}</p>`)
+            .join("");
+            
+          const injectedAnchor = injectVariables(anchorPhrase);
+          const injectedIntegration = injectVariables(template.integration);
+
+          // Texto específico por perfil para a transição
+          let profileSpecificText = "";
+          let sombraName = "";
+          if (winner === "A") {
+            profileSpecificText = "No Protocolo, o Dia 2 trabalha exatamente o ponto onde sua sombra nasceu: o momento em que proximidade virou perigo.";
+            sombraName = "Sombra do Abandono";
+          } else if (winner === "B") {
+            profileSpecificText = "O Protocolo começa no lugar onde a Sombra da Indignidade mais te prende: a crença de que você precisa merecer antes de receber.";
+            sombraName = "Sombra da Indignidade";
+          } else if (winner === "C") {
+            profileSpecificText = "O Dia 1 vai direto à origem do controle: não para você abandoná-lo, mas para entender o que ele tenta proteger.";
+            sombraName = "Sombra do Controle";
+          } else if (winner === "D") {
+            profileSpecificText = "O Dia 3 traz o exercício mais transformador para a Sombra da Invisibilidade: ocupar espaço de um jeito que seja seu, sem ser forçado.";
+            sombraName = "Sombra da Invisibilidade";
+          }
+
+          return `
+            <div class="screen">
+              <div class="result-outer-container">
+                
+                <!-- Cabeçalho do laudo com halo luminoso posterior -->
+                <header class="result-glow-header">
+                  <div class="result-glow-halo" aria-hidden="true"></div>
+                  <span class="result-top-badge">Diagnóstico Profundo</span>
+                  <h1 class="result-main-title">
+                    Mapeamento do Inconsciente
+                    <span class="profile-glow-name">${profileTitle}</span>
+                  </h1>
+                </header>
+
+                <!-- Orb Abstrato 3D de Integração -->
+                <div class="orb-visual-box" aria-hidden="true">
+                  <div class="orb-background-fog"></div>
+                  <div class="orb-core-sphere"></div>
+                </div>
+
+                <!-- Frase Âncora visceral -->
+                <div style="text-align: center; margin-bottom: 0;">
+                  <p class="result-paragraph" style="font-family: var(--font-serif); font-size: 1.4rem; color: var(--color-text-main); font-style: italic; line-height: 1.55; text-align: center;">
+                    "${injectedAnchor}"
+                  </p>
+                </div>
+                <!-- Botão de Ancoragem para Rolagem Suave -->
+                <div style="text-align: center; margin: 24px 0;">
+                  <button id="btn-scroll-to-sales" class="btn-buy-now" style="width: auto; padding: 0 36px; margin: 0; display: inline-flex;">
+                    Quero integrar minha sombra
+                  </button>
+                </div>
+
+                <!-- Corpo Narrativo do Perfil -->
+                <article class="result-text-article">
+                  ${injectedParagraphsHtml}
+                </article>
+
+                <!-- Bloco O que Muda (Cura/Integração) -->
+                <section class="integration-box-card">
+                  <h3 class="integration-box-title">O que muda quando você integra essa sombra</h3>
+                  <p class="integration-box-text">
+                    ${injectedIntegration}
+                  </p>
+                </section>
+
+                <!-- Divisor Visual com Glow -->
+                <hr class="sales-divider" aria-hidden="true">
+
+                <!-- Tela de Transição para Vendas -->
+                <section class="sales-transition-block" id="sales-section">
+                  <h2 class="sales-transition-title">
+                    Identificar a sua sombra foi o primeiro passo.<br>
+                    <span class="color-int">O segundo é integrá-la.</span>
+                  </h2>
+                  <p class="sales-transition-paragraph">
+                    Saber qual sombra te sabota não faz ela parar. Você provavelmente já percebeu isso: entender nunca foi o seu problema. O que faltou foi um processo que chegasse onde a sombra realmente vive.
+                  </p>
+                  <p class="sales-transition-paragraph">
+                    Foi exatamente para isso que criamos o Protocolo de 3 Dias: um processo estruturado para você encontrar, dialogar e integrar a sombra que está operando por trás da sua autossabotagem. Não em anos. Em 3 dias.
+                  </p>
+                  <p class="sales-profile-paragraph">
+                    ${profileSpecificText}
+                  </p>
+                </section>
+
+                <!-- Cartão do Produto + Order Bump -->
+                <section class="product-card-wrapper">
+                  <div class="product-card">
+                    <span class="product-card-label">TRABALHO INTERIOR · PROTOCOLO</span>
+                    <h3 class="product-card-title">O Protocolo dos 3 Dias</h3>
+                    <p class="product-card-subtitle">Três dias. Um protocolo. Uma sombra integrada.</p>
+                    
+                    <ul class="product-features-list">
+                      <li>
+                        <span class="feature-emoji">🌑</span>
+                        <span class="feature-text">O protocolo completo dos 3 dias, com processo e exercício central por dia</span>
+                      </li>
+                      <li>
+                        <span class="feature-emoji">📍</span>
+                        <span class="feature-text">Cada dia tem um objetivo claro, uma prática específica e um comprometimento real</span>
+                      </li>
+                      <li>
+                        <span class="feature-emoji">🧠</span>
+                        <span class="feature-text">Linguagem direta, sem misticismo e sem jargão de terapia</span>
+                      </li>
+                      <li>
+                        <span class="feature-emoji">⚡</span>
+                        <span class="feature-text">Acesso imediato em PDF, você executa hoje</span>
+                      </li>
+                    </ul>
+                    
+                    <div class="product-price-block">
+                      <span class="price-old">R$ 97</span>
+                      <span class="price-current">R$ 27</span>
+                      <span class="price-microcopy">Oferta disponível apenas nesta página.</span>
+                    </div>
+                    
+                    <button id="btn-buy-protocol" class="btn-buy-now">QUERO EXECUTAR O PROTOCOLO →</button>
+                    
+                    <div class="product-guarantees">
+                      <p>🔒  Pagamento 100% seguro</p>
+                      <p>↩️  Garantia de 7 dias. Se não fizer sentido pra você, devolvemos.</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Order Bump Section -->
+                  <div class="order-bump">
+                    <div class="bump-container">
+                      <div class="bump-checkbox-wrapper">
+                        <div id="bump-checkbox" class="bump-styled-checkbox checked" role="checkbox" aria-checked="true" tabindex="0">
+                          <span class="bump-check-mark">✓</span>
+                        </div>
+                      </div>
+                      
+                      <div class="bump-content">
+                        <p class="bump-title">Sim, adicionar o Pack de Prompts de IA por +R$ 17</p>
+                        <p class="bump-description">
+                          Mais de 30 prompts prontos para fazer shadow work com qualquer IA, com uma trilha específica para integrar sua ${sombraName}. Funciona com ChatGPT, Claude ou qualquer IA de texto.
+                        </p>
+                        <p class="bump-microcopy">Adicionado automaticamente ao pedido. Desmarque se não quiser.</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+              </div>
+            </div>
+          `;
+        },
+        setup: () => {
+          // Scroll suave para a seção de venda
+          const btnScroll = document.getElementById("btn-scroll-to-sales");
+          if (btnScroll) {
+            btnScroll.addEventListener("click", () => {
+              const salesSec = document.getElementById("sales-section");
+              if (salesSec) {
+                salesSec.scrollIntoView({ behavior: "smooth" });
+              }
+            });
+          }
+
+          const bumpCheckbox = document.getElementById("bump-checkbox");
+          let upsellAccepted = true;
+          
+          if (bumpCheckbox) {
+            bumpCheckbox.addEventListener("click", () => {
+              upsellAccepted = !upsellAccepted;
+              if (upsellAccepted) {
+                bumpCheckbox.classList.add("checked");
+                bumpCheckbox.setAttribute("aria-checked", "true");
+              } else {
+                bumpCheckbox.classList.remove("checked");
+                bumpCheckbox.setAttribute("aria-checked", "false");
+              }
+            });
+            
+            // Keydown support
+            bumpCheckbox.addEventListener("keydown", (e) => {
+              if (e.key === " " || e.key === "Enter") {
+                e.preventDefault();
+                bumpCheckbox.click();
+              }
+            });
+          }
+          
+          const buyButton = document.getElementById("btn-buy-protocol");
+          if (buyButton) {
+            buyButton.addEventListener("click", () => {
+              const valorBase = 27;
+              const valorUpsell = upsellAccepted ? 17 : 0;
+              const valorTotal = valorBase + valorUpsell;
+              
+              let perfilName = "";
+              if (state.winnerProfile === "A") perfilName = "Sombra do Abandono";
+              else if (state.winnerProfile === "B") perfilName = "Sombra da Indignidade";
+              else if (state.winnerProfile === "C") perfilName = "Sombra do Controle";
+              else if (state.winnerProfile === "D") perfilName = "Sombra da Invisibilidade";
+
+              console.log("Compra Efetuada:", {
+                produto: "Protocolo de 3 Dias",
+                valor: valorBase,
+                upsell: upsellAccepted,
+                valorUpsell: valorUpsell,
+                valorTotal: valorTotal,
+                perfil: perfilName,
+                nome: state.nome,
+                email: state.email
+              });
+              
+              // Dispara o Pixel do Facebook para InitiateCheckout
+              fbq('track', 'InitiateCheckout');
+              
+              // Abre o checkout da Kiwify em nova aba
+              window.open('https://pay.kiwify.com.br/APFNbz9', '_blank');
+              
+              // Exibir tela de confirmação simples
+              renderConfirmationScreen();
+            });
+          }
+        }
+      }
+    ];
+
+    // --- SETUP PARA AS SELEÇÕES ÚNICAS (P1, P2, P3, P4, P5, P6, P8, P9) ---
+    function setupSingleChoice(questionId) {
+      const cards = document.querySelectorAll(".option-card");
+      const savedResponse = state.responses[questionId];
+
+      // Re-aplica visual se já houver resposta armazenada
+      if (savedResponse) {
+        cards.forEach(card => {
+          if (card.getAttribute("data-val") === savedResponse) {
+            card.classList.add("selected");
+          }
+        });
+      }
+
+      cards.forEach(card => {
+        card.addEventListener("click", () => {
+          // Remove seleção prévia
+          cards.forEach(c => c.classList.remove("selected"));
+          
+          // Adiciona seleção atual
+          card.classList.add("selected");
+          
+          // Salva no objeto em memória
+          const selectedVal = card.getAttribute("data-val");
+          state.responses[questionId] = selectedVal;
+
+          // Aguarda exatos 350ms de pausa de feedback antes de avançar automaticamente
+          setTimeout(() => {
+            nextScreen();
+          }, 350);
+        });
+      });
+    }
+
+    // --- SETUP PARA SELEÇÃO MÚLTIPLA (P7) ---
+    function setupMultipleChoice() {
+      const cards = document.querySelectorAll(".option-card");
+      const nextBtn = document.getElementById("btn-p7-next");
+      
+      // Carrega seleções armazenadas em memória se existirem
+      let selectedIndices = state.responses["P7"] || [];
+      
+      if (selectedIndices.length > 0) {
+        cards.forEach(card => {
+          const idx = parseInt(card.getAttribute("data-index"));
+          if (selectedIndices.includes(idx)) {
+            card.classList.add("selected");
+          }
+        });
+        nextBtn.classList.remove("hidden-btn");
+        nextBtn.classList.add("show-btn");
+      }
+
+      cards.forEach(card => {
+        card.addEventListener("click", () => {
+          const idx = parseInt(card.getAttribute("data-index"));
+          
+          if (card.classList.contains("selected")) {
+            card.classList.remove("selected");
+            selectedIndices = selectedIndices.filter(i => i !== idx);
+          } else {
+            card.classList.add("selected");
+            selectedIndices.push(idx);
+          }
+
+          state.responses["P7"] = selectedIndices;
+
+          // Exibe ou oculta botão de acordo com seleção mínima
+          if (selectedIndices.length > 0) {
+            nextBtn.classList.remove("hidden-btn");
+            nextBtn.classList.add("show-btn");
+          } else {
+            nextBtn.classList.remove("show-btn");
+            nextBtn.classList.add("hidden-btn");
+          }
+        });
+      });
+
+      nextBtn.addEventListener("click", () => {
+        nextScreen();
+      });
+    }
+
+    // --- ATUALIZADOR DA BARRA DE PROGRESSO REAL ---
+    function updateProgressBar(screen) {
+      const percent = PROGRESS_MAP[screen.id];
+      if (percent !== undefined) {
+        progressContainer.classList.remove("hidden");
+        progressBar.style.width = `${percent}%`;
+      } else {
+        progressContainer.classList.add("hidden");
+        progressBar.style.width = "0%";
+      }
+    }
+
+    // --- RENDERIZADOR DO BOTÃO DE VOLTAR INLINE ---
+    function renderBackButton(screen) {
+      const noBackScreens = ["analysis", "result"];
+      
+      if (state.currentScreenIndex === 0 || noBackScreens.includes(screen.id)) {
+        backButtonContainer.innerHTML = "";
+      } else {
+        backButtonContainer.innerHTML = `
+          <button id="btn-action-back" class="btn-back">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Voltar</span>
+          </button>
+        `;
+        
+        document.getElementById("btn-action-back").addEventListener("click", () => {
+          prevScreen();
+        });
+      }
+    }
+
+    // --- GERENCIADOR DE TRANSITIONS DE TELA (300ms) ---
+    function renderScreen(index) {
+      const screen = SCREENS[index];
+      if (!screen) return;
+
+      const currentScreenEl = screenViewport.querySelector(".screen");
+      if (currentScreenEl) {
+        currentScreenEl.classList.add("fade-out");
+        // Aguarda fim do fade-out (300ms) antes de injetar e fade-in o próximo
+        setTimeout(() => {
+          injectAndSetupScreen(screen);
+        }, 300);
+      } else {
+        injectAndSetupScreen(screen);
+      }
+    }
+
+    function injectAndSetupScreen(screen) {
+      screenViewport.innerHTML = screen.render();
+      
+      // Scroll suave ao topo da tela
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // Modo de Afirmação (fundo teal escuro de pausa)
+      if (screen.type === "affirmation") {
+        body.classList.add("affirmation-mode");
+      } else {
+        body.classList.remove("affirmation-mode");
+      }
+
+      updateProgressBar(screen);
+      renderBackButton(screen);
+
+      if (screen.setup) {
+        screen.setup();
+      }
+    }
+
+    // --- CONTROLE DE NAVEGAÇÃO ---
+    function nextScreen() {
+      if (state.currentScreenIndex < SCREENS.length - 1) {
+        state.currentScreenIndex++;
+        renderScreen(state.currentScreenIndex);
+      }
+    }
+
+    function prevScreen() {
+      if (state.currentScreenIndex > 0) {
+        state.currentScreenIndex--;
+        renderScreen(state.currentScreenIndex);
+      }
+    }
+
+    // --- TELA DE CONFIRMAÇÃO DO PROTOCOLO ---
+    function renderConfirmationScreen() {
+      progressContainer.classList.add("hidden");
+      backButtonContainer.innerHTML = "";
+      body.classList.add("affirmation-mode");
+      
+      screenViewport.innerHTML = `
+        <div class="screen">
+          <div class="affirmation-box" style="padding: 40px 20px;">
+            <span class="affirmation-badge" style="font-size: 2.5rem; margin-bottom: 24px;">✧</span>
+            <h1 style="font-family: var(--font-serif); font-size: 2rem; color: var(--color-text-main); line-height: 1.4; text-align: center; margin-bottom: 20px;">
+              Obrigado, ${state.nome}.
+            </h1>
+            <p style="font-family: var(--font-sans); font-size: 1.15rem; color: var(--color-text-secondary); line-height: 1.7; text-align: center; max-width: 500px;">
+              Seu acesso está sendo preparado.<br>
+              Em instantes você receberá um e-mail em <strong>${state.email}</strong>.
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- CARGA INICIAL DO QUIZ ---
+    renderScreen(state.currentScreenIndex);
+
+  </script>
+</body>
+</html>

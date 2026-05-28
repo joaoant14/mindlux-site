@@ -1225,6 +1225,16 @@
       margin-top: 4px;
     }
   </style>
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6MLBYF59F"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6MLBYF59F');
+  </script>
+  <!-- End Google Analytics 4 -->
+
   <!-- Meta Pixel Code -->
   <script>
   !function(f,b,e,v,n,t,s)
@@ -1235,11 +1245,11 @@
   t.src=v;s=b.getElementsByTagName(e)[0];
   s.parentNode.insertBefore(t,s)}(window, document,'script',
   'https://connect.facebook.net/en_US/fbevents.js');
-  fbq('init', '1310591816664170');
+  fbq('init', '1042982389855629');
   fbq('track', 'PageView');
   </script>
   <noscript><img height="1" width="1" style="display:none"
-  src="https://www.facebook.com/tr?id=1310591816664170&ev=PageView&noscript=1"
+  src="https://www.facebook.com/tr?id=1042982389855629&ev=PageView&noscript=1"
   /></noscript>
   <!-- End Meta Pixel Code -->
   <script
@@ -2456,6 +2466,43 @@
       }
     }
 
+    // Mapa de nomes legíveis para cada tela
+    const SCREEN_LABELS = {
+      "P1":           "Pergunta_1",
+      "affirmation1": "Afirmacao_1",
+      "P2":           "Pergunta_2",
+      "P3":           "Pergunta_3",
+      "affirmation2": "Afirmacao_2",
+      "P4":           "Pergunta_4",
+      "P5":           "Pergunta_5",
+      "affirmation3": "Afirmacao_3",
+      "P6":           "Pergunta_6",
+      "P7":           "Pergunta_7",
+      "thermometer":  "Termometro",
+      "P8":           "Pergunta_8",
+      "P9":           "Pergunta_9",
+      "affirmation4": "Afirmacao_4",
+      "analysis":     "Analise",
+      "result":       "Resultado"
+    };
+
+    function trackScreen(screenId) {
+      const label = SCREEN_LABELS[screenId] || screenId;
+
+      // Meta Pixel — evento customizado por tela
+      if (typeof fbq === "function") {
+        fbq('trackCustom', 'QuizStep', { step: label });
+      }
+
+      // GA4 — evento por tela
+      if (typeof gtag === "function") {
+        gtag('event', 'quiz_step', {
+          step_name: label,
+          step_id: screenId
+        });
+      }
+    }
+
     function injectAndSetupScreen(screen) {
       screenViewport.innerHTML = screen.render();
       
@@ -2471,6 +2518,9 @@
 
       updateProgressBar(screen);
       renderBackButton(screen);
+
+      // Tracking de funil — dispara ao entrar em cada tela
+      trackScreen(screen.id);
 
       if (screen.setup) {
         screen.setup();

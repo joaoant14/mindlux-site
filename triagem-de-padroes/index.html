@@ -1303,6 +1303,16 @@
       color: var(--color-text-main);
     }
   </style>
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6HNL0YFS9F"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6HNL0YFS9F');
+  </script>
+  <!-- End Google Analytics 4 -->
+
   <!-- Meta Pixel Code -->
   <script>
   !function(f,b,e,v,n,t,s)
@@ -1313,11 +1323,11 @@
   t.src=v;s=b.getElementsByTagName(e)[0];
   s.parentNode.insertBefore(t,s)}(window, document,'script',
   'https://connect.facebook.net/en_US/fbevents.js');
-  fbq('init', '1310591816664170');
+  fbq('init', '1518584300056520');
   fbq('track', 'PageView');
   </script>
   <noscript><img height="1" width="1" style="display:none"
-  src="https://www.facebook.com/tr?id=1310591816664170&ev=PageView&noscript=1"
+  src="https://www.facebook.com/tr?id=1518584300056520&ev=PageView&noscript=1"
   /></noscript>
   <!-- End Meta Pixel Code -->
   <script
@@ -1600,13 +1610,19 @@
               ao redor do mundo.
             </h1>
             
-            <div style="text-align: center; margin-bottom: 28px; max-width: 500px;">
-              <p style="font-style: italic; color: var(--color-text-secondary); font-size: 1.05rem; line-height: 1.6; margin: 0;">
+            <div style="background: rgba(75, 63, 212, 0.08); border: 1px solid rgba(139, 130, 240, 0.2); border-radius: 16px; padding: 24px 20px; text-align: center; margin-bottom: 28px; max-width: 500px;">
+              <p style="font-family: var(--font-serif); font-style: italic; color: var(--color-text-main); font-size: 1.05rem; line-height: 1.65; margin: 0 0 16px 0;">
                 "Até você tornar o inconsciente consciente, ele vai dirigir a sua vida e você vai chamá-lo de destino."
               </p>
-              <p style="color: var(--color-text-secondary); font-size: 0.95rem; margin-top: 6px; font-weight: 500; margin-bottom: 0;">
-                — Carl Jung
-              </p>
+              <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <img
+                  src="https://mindlux-site.vercel.app/triagem-de-padroes/jung-quote.webp"
+                  alt="Carl Jung"
+                  loading="lazy"
+                  style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-primary-glow); flex-shrink: 0;"
+                >
+                <span style="font-family: var(--font-sans); font-size: 0.9rem; font-weight: 600; color: var(--color-primary-glow);">— Carl Jung</span>
+              </div>
             </div>
             
             <p class="text-body" style="margin-bottom: 24px;">
@@ -1674,7 +1690,7 @@
             <div class="affirmation-box">
               <span class="affirmation-badge" style="font-size: 0.95rem; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; margin-bottom: 24px;">A MENTE QUE MAPEOU A PSIQUE</span>
               
-              <img src="https://upload.wikimedia.org/wikipedia/commons/0/00/CGJung.jpg" 
+              <img src="https://mindlux-site.vercel.app/triagem-de-padroes/jung-autoridade.jpg" 
                    alt="Carl Gustav Jung" 
                    loading="lazy"
                    style="border-radius: 50%; width: 120px; height: 120px; object-fit: cover; border: 3px solid var(--color-primary-glow); margin-bottom: 20px; box-shadow: 0 0 20px rgba(139, 130, 240, 0.25);">
@@ -1791,7 +1807,7 @@
               <h2 style="font-family: var(--font-serif); font-size: 1.6rem; color: var(--color-text-main); margin-bottom: 24px;">A Sombra</h2>
               
               <img 
-                src="https://i.imgur.com/XYglr33.png" 
+                src="https://mindlux-site.vercel.app/triagem-de-padroes/diagrama.png" 
                 alt="Diagrama Ego, Self e Sombra" 
                 loading="lazy"
                 style="width: 100%; max-width: 280px; display: block; margin: 0 auto 24px auto; border-radius: 12px;"
@@ -2667,6 +2683,44 @@
       }
     }
 
+    // --- MAPA DE NOMES LEGÍVEIS PARA CADA TELA ---
+    const SCREEN_LABELS = {
+      "entry":        "Entrada",
+      "P1":           "Pergunta_1",
+      "jung1":        "Jung_1",
+      "P2":           "Pergunta_2",
+      "P3":           "Pergunta_3",
+      "jung2":        "Jung_2",
+      "P4":           "Pergunta_4",
+      "P5":           "Pergunta_5",
+      "P6":           "Pergunta_6",
+      "jung3":        "Jung_3",
+      "P7":           "Pergunta_7",
+      "thermometer":  "Termometro",
+      "P8":           "Pergunta_8",
+      "P9":           "Pergunta_9",
+      "affirmation4": "Afirmacao_4",
+      "analysis":     "Analise",
+      "result":       "Resultado"
+    };
+
+    function trackScreen(screenId) {
+      const label = SCREEN_LABELS[screenId] || screenId;
+
+      // Meta Pixel — evento customizado por tela
+      if (typeof fbq === "function") {
+        fbq('trackCustom', 'QuizStep', { step: label });
+      }
+
+      // GA4 — evento por tela
+      if (typeof gtag === "function") {
+        gtag('event', 'quiz_step', {
+          step_name: label,
+          step_id: screenId
+        });
+      }
+    }
+
     function injectAndSetupScreen(screen) {
       screenViewport.innerHTML = screen.render();
       
@@ -2682,6 +2736,9 @@
 
       updateProgressBar(screen);
       renderBackButton(screen);
+
+      // Tracking de funil — dispara ao entrar em cada tela
+      trackScreen(screen.id);
 
       if (screen.setup) {
         screen.setup();

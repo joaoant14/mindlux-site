@@ -1224,17 +1224,85 @@
       color: var(--color-text-secondary);
       margin-top: 4px;
     }
-  </style>
-  <!-- Google Analytics 4 -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6MLBYF59F"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-6MLBYF59F');
-  </script>
-  <!-- End Google Analytics 4 -->
 
+    /* Social Proof Section */
+    .social-proof-section {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      margin: 32px 0;
+    }
+
+    .social-proof-quote-block {
+      text-align: center;
+      padding: 28px 24px;
+      background: rgba(75, 63, 212, 0.08);
+      border: 1px solid rgba(139, 130, 240, 0.2);
+      border-radius: 20px;
+    }
+
+    .social-proof-expert-quote {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      font-style: italic;
+      color: var(--color-text-main);
+      line-height: 1.65;
+      margin-bottom: 12px;
+    }
+
+    .social-proof-expert-name {
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--color-primary-glow);
+      margin-bottom: 6px;
+    }
+
+    .social-proof-expert-credential {
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+
+    .social-proof-testimonials {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .testimonial-card {
+      background-color: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+      padding: 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .testimonial-stars {
+      font-size: 0.9rem;
+      letter-spacing: 2px;
+    }
+
+    .testimonial-text {
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      color: var(--color-text-secondary);
+      line-height: 1.65;
+      font-weight: 300;
+      font-style: italic;
+    }
+
+    .testimonial-author {
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--color-text-main);
+    }
+  </style>
   <!-- Meta Pixel Code -->
   <script>
   !function(f,b,e,v,n,t,s)
@@ -1245,11 +1313,11 @@
   t.src=v;s=b.getElementsByTagName(e)[0];
   s.parentNode.insertBefore(t,s)}(window, document,'script',
   'https://connect.facebook.net/en_US/fbevents.js');
-  fbq('init', '1042982389855629');
+  fbq('init', '1310591816664170');
   fbq('track', 'PageView');
   </script>
   <noscript><img height="1" width="1" style="display:none"
-  src="https://www.facebook.com/tr?id=1042982389855629&ev=PageView&noscript=1"
+  src="https://www.facebook.com/tr?id=1310591816664170&ev=PageView&noscript=1"
   /></noscript>
   <!-- End Meta Pixel Code -->
   <script
@@ -1518,6 +1586,43 @@
 
     // --- SEQUÊNCIA COMPLETA DE PERGUNTAS E TELAS ---
     const SCREENS = [
+      // 1. TELA DE ENTRADA (Intro)
+      {
+        id: "intro",
+        type: "intro",
+        render: () => `
+          <div class="screen" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <h1 class="headline-intro" style="text-align: center;">
+              Descubra sua sombra dominante com o método de 
+              <span style="color: var(--color-primary-glow);">mais de 90 anos</span> 
+              que já transformou a vida de 
+              <span style="color: var(--color-integration);">mais de 10 milhões de pessoas</span> 
+              ao redor do mundo.
+            </h1>
+            
+            <div style="text-align: center; margin-bottom: 28px; max-width: 500px;">
+              <p style="font-style: italic; color: var(--color-text-secondary); font-size: 1.05rem; line-height: 1.6; margin: 0;">
+                "Até você tornar o inconsciente consciente, ele vai dirigir a sua vida e você vai chamá-lo de destino."
+              </p>
+              <p style="color: var(--color-text-secondary); font-size: 0.95rem; margin-top: 6px; font-weight: 500; margin-bottom: 0;">
+                — Carl Jung
+              </p>
+            </div>
+            
+            <p class="text-body" style="margin-bottom: 24px;">
+              Chega de repetir os mesmos padrões sem entender por quê.
+            </p>
+            
+            <button id="btn-start-quiz" class="btn-primary" style="margin-top: 8px;">
+              Sim, quero descobrir minha sombra →
+            </button>
+          </div>
+        `,
+        setup: () => {
+          document.getElementById("btn-start-quiz").addEventListener("click", () => nextScreen());
+        }
+      },
+
       // 2. PERGUNTA 1 de 9 — Área (não pontua perfil)
       {
         id: "P1",
@@ -1560,24 +1665,43 @@
         setup: () => setupSingleChoice("P1")
       },
 
-      // 3. AFIRMAÇÃO 1
+      // 3. AFIRMAÇÃO JUNG 1
       {
-        id: "affirmation1",
+        id: "jung1",
         type: "affirmation",
         render: () => `
           <div class="screen">
             <div class="affirmation-box">
-              <span class="affirmation-badge">✧</span>
-              <h2 class="affirmation-text-lead">
-                Reconhecer isso já é o primeiro passo, e a maioria das pessoas nunca chega a dar.<br><br>
-                Olhar de frente para o próprio padrão exige uma honestidade que pouca gente tem. Você acabou de fazer isso.
-              </h2>
-              <button id="btn-affirmation1-next" class="btn-primary">Continuar →</button>
+              <span class="affirmation-badge" style="font-size: 0.95rem; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; margin-bottom: 24px;">A MENTE QUE MAPEOU A PSIQUE</span>
+              
+              <img src="https://upload.wikimedia.org/wikipedia/commons/0/00/CGJung.jpg" 
+                   alt="Carl Gustav Jung" 
+                   loading="lazy"
+                   style="border-radius: 50%; width: 120px; height: 120px; object-fit: cover; border: 3px solid var(--color-primary-glow); margin-bottom: 20px; box-shadow: 0 0 20px rgba(139, 130, 240, 0.25);">
+              
+              <h2 style="font-family: var(--font-serif); font-size: 1.6rem; color: var(--color-text-main); margin-bottom: 6px;">Carl Gustav Jung</h2>
+              <p style="font-family: var(--font-sans); color: var(--color-integration); margin-bottom: 20px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.85rem;">Fundador da psicologia analítica</p>
+              
+              <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 500px; margin-bottom: 20px; text-align: center;">
+                Jung é um dos nomes que fundaram a psicologia moderna, juntamente a Freud. Seu trabalho é estudado e aplicado há quase um século, no mundo todo, até hoje.
+              </p>
+              
+              <hr style="width: 40px; border: none; height: 1px; background-color: var(--color-border); margin: 0 auto 20px auto;">
+              
+              <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 500px; margin-bottom: 20px; text-align: center;">
+                Foi ele quem criou conceitos que você já usa sem perceber: introvertido, extrovertido, arquétipo. E um em especial:
+              </p>
+              
+              <p style="font-family: var(--font-serif); font-size: 1.8rem; font-weight: 700; color: var(--color-integration); text-shadow: 0 0 10px rgba(34, 184, 160, 0.3); text-transform: lowercase; margin-bottom: 32px; text-align: center;">
+                a sombra.
+              </p>
+              
+              <button id="btn-jung1-next" class="btn-primary">Continuar →</button>
             </div>
           </div>
         `,
         setup: () => {
-          document.getElementById("btn-affirmation1-next").addEventListener("click", () => nextScreen());
+          document.getElementById("btn-jung1-next").addEventListener("click", () => nextScreen());
         }
       },
 
@@ -1655,25 +1779,44 @@
         setup: () => setupSingleChoice("P3")
       },
 
-      // 6. AFIRMAÇÃO 2
+      // 6. AFIRMAÇÃO JUNG 2
       {
-        id: "affirmation2",
+        id: "jung2",
         type: "affirmation",
         render: () => `
           <div class="screen">
             <div class="affirmation-box">
-              <span class="affirmation-badge">✧</span>
-              <h2 class="affirmation-text-lead">
-                O que você está descrevendo não é falta de força de vontade.<br><br>
-                É uma parte de você que aprendeu, em algum momento, que se sabotar era a forma mais segura de se proteger. Ela não é sua inimiga. Ela só nunca foi ouvida de verdade.<br><br>
-                É exatamente sobre isso que o seu resultado vai falar.
-              </h2>
-              <button id="btn-affirmation2-next" class="btn-primary">Continuar →</button>
+              <span class="affirmation-badge" style="font-size: 0.95rem; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; margin-bottom: 24px;">O QUE OPERA POR BAIXO</span>
+              
+              <h2 style="font-family: var(--font-serif); font-size: 1.6rem; color: var(--color-text-main); margin-bottom: 24px;">A Sombra</h2>
+              
+              <img 
+                src="https://i.imgur.com/XYglr33.png" 
+                alt="Diagrama Ego, Self e Sombra" 
+                loading="lazy"
+                style="width: 100%; max-width: 280px; display: block; margin: 0 auto 24px auto; border-radius: 12px;"
+              >
+              
+              <p style="font-weight: 700; font-size: 1.1rem; color: var(--color-text-main); margin-bottom: 16px; text-align: center;">Seu lado que você escondeu.</p>
+              
+              <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 500px; margin-bottom: 20px; text-align: center;">
+                As emoções que foram rejeitadas, os desejos que pareciam errados, as partes de você que em algum momento receberam a mensagem de que não eram bem-vindas.
+              </p>
+              
+              <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 500px; margin-bottom: 24px; text-align: center;">
+                Você não nasceu com ela escondida. Ela foi empurrada para baixo. E tudo que é empurrado para baixo não desaparece — continua operando, só que agora fora da sua visão.
+              </p>
+              
+              <p style="font-style: italic; font-weight: 500; color: var(--color-integration); font-size: 1.15rem; line-height: 1.6; margin-bottom: 32px; text-align: center;">
+                É ela que age quando você se sabota sem entender por quê.
+              </p>
+              
+              <button id="btn-jung2-next" class="btn-primary">Continuar →</button>
             </div>
           </div>
         `,
         setup: () => {
-          document.getElementById("btn-affirmation2-next").addEventListener("click", () => nextScreen());
+          document.getElementById("btn-jung2-next").addEventListener("click", () => nextScreen());
         }
       },
 
@@ -1751,24 +1894,46 @@
         setup: () => setupSingleChoice("P5")
       },
 
-      // 9. AFIRMAÇÃO 3
+      // 9. AFIRMAÇÃO JUNG 3
       {
-        id: "affirmation3",
+        id: "jung3",
         type: "affirmation",
         render: () => `
           <div class="screen">
             <div class="affirmation-box">
-              <span class="affirmation-badge">✧</span>
-              <h2 class="affirmation-text-lead">
-                Quase ninguém fala sobre isso, mas ter dificuldade de receber é uma das formas mais silenciosas de autossabotagem que existe.<br><br>
-                Não é frescura, não é exagero. É um padrão real. E o simples fato de você conseguir reconhecê-lo em si mesmo já coloca você à frente da maioria.
-              </h2>
-              <button id="btn-affirmation3-next" class="btn-primary">Continuar →</button>
+              <span class="affirmation-badge" style="font-size: 0.95rem; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; margin-bottom: 24px;">O DESTINO DO PROCESSO</span>
+              
+              <h2 style="font-family: var(--font-serif); font-size: 1.6rem; color: var(--color-text-main); margin-bottom: 24px;">Individuação</h2>
+              
+              <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 500px; margin-bottom: 20px; text-align: center;">
+                Jung descobriu que cada pessoa carrega dentro de si uma versão mais inteira, mais autêntica de si mesma. Não uma versão perfeita. A versão real.
+              </p>
+              
+              <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 500px; margin-bottom: 20px; text-align: center;">
+                O caminho até ela passa pela sombra. Integrar o que foi escondido é o que libera quem você de fato é.
+              </p>
+              
+              <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 500px; margin-bottom: 20px; text-align: center;">
+                Ele chamou esse processo de individuação. Tornar-se, finalmente, você mesmo.
+              </p>
+              
+              <hr style="width: 60px; border: none; height: 1px; background-color: var(--color-primary); margin: 0 auto 24px auto;">
+              
+              <div style="background: rgba(75, 63, 212, 0.1); border-left: 3px solid var(--color-primary-glow); padding: 20px; border-radius: 12px; margin-bottom: 32px; text-align: center; max-width: 500px; width: 100%;">
+                <p style="font-style: italic; color: var(--color-text-main); font-size: 1.05rem; line-height: 1.6; margin-bottom: 8px; text-align: center;">
+                  "Até você tornar o inconsciente consciente, ele vai dirigir a sua vida e você vai chamá-lo de destino."
+                </p>
+                <p style="color: var(--color-primary-glow); font-weight: 600; font-size: 0.95rem; margin: 0; text-align: center;">
+                  — Carl Jung
+                </p>
+              </div>
+              
+              <button id="btn-jung3-next" class="btn-primary">Continuar →</button>
             </div>
           </div>
         `,
         setup: () => {
-          document.getElementById("btn-affirmation3-next").addEventListener("click", () => nextScreen());
+          document.getElementById("btn-jung3-next").addEventListener("click", () => nextScreen());
         }
       },
 
@@ -2175,6 +2340,42 @@
                   </p>
                 </section>
 
+                <section class="social-proof-section">
+
+                  <!-- Citação Brené Brown -->
+                  <div class="social-proof-quote-block">
+                    <p class="social-proof-expert-quote">
+                      "A vergonha prospera no segredo. Quando iluminamos o que escondemos, ela perde o poder."
+                    </p>
+                    <p class="social-proof-expert-name">— Brené Brown</p>
+                    <p class="social-proof-expert-credential">
+                      Pesquisadora de vulnerabilidade · Autora de 6 bestsellers no New York Times · 20+ milhões de visualizações no TED
+                    </p>
+                  </div>
+
+                  <!-- Depoimentos -->
+                  <div class="social-proof-testimonials">
+
+                    <div class="testimonial-card">
+                      <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                      <p class="testimonial-text">
+                        "Passei anos em terapia tentando entender por que eu sempre destruía relacionamentos quando ficavam sérios. Quando li sobre a sombra do abandono pela primeira vez, foi como alguém finalmente ligou a luz num quarto escuro. Era exatamente isso."
+                      </p>
+                      <p class="testimonial-author">— Carla S.</p>
+                    </div>
+
+                    <div class="testimonial-card">
+                      <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                      <p class="testimonial-text">
+                        "Eu achava que era preguiça. Que faltava disciplina. Quando entendi que o que me travava não vivia na minha mente consciente, tudo mudou. Não era fraqueza. Era um padrão que eu podia finalmente ver."
+                      </p>
+                      <p class="testimonial-author">— Pedro Cardoso</p>
+                    </div>
+
+                  </div>
+
+                </section>
+
                 <!-- Divisor Visual com Glow -->
                 <hr class="sales-divider" aria-hidden="true">
 
@@ -2466,43 +2667,6 @@
       }
     }
 
-    // Mapa de nomes legíveis para cada tela
-    const SCREEN_LABELS = {
-      "P1":           "Pergunta_1",
-      "affirmation1": "Afirmacao_1",
-      "P2":           "Pergunta_2",
-      "P3":           "Pergunta_3",
-      "affirmation2": "Afirmacao_2",
-      "P4":           "Pergunta_4",
-      "P5":           "Pergunta_5",
-      "affirmation3": "Afirmacao_3",
-      "P6":           "Pergunta_6",
-      "P7":           "Pergunta_7",
-      "thermometer":  "Termometro",
-      "P8":           "Pergunta_8",
-      "P9":           "Pergunta_9",
-      "affirmation4": "Afirmacao_4",
-      "analysis":     "Analise",
-      "result":       "Resultado"
-    };
-
-    function trackScreen(screenId) {
-      const label = SCREEN_LABELS[screenId] || screenId;
-
-      // Meta Pixel — evento customizado por tela
-      if (typeof fbq === "function") {
-        fbq('trackCustom', 'QuizStep', { step: label });
-      }
-
-      // GA4 — evento por tela
-      if (typeof gtag === "function") {
-        gtag('event', 'quiz_step', {
-          step_name: label,
-          step_id: screenId
-        });
-      }
-    }
-
     function injectAndSetupScreen(screen) {
       screenViewport.innerHTML = screen.render();
       
@@ -2518,9 +2682,6 @@
 
       updateProgressBar(screen);
       renderBackButton(screen);
-
-      // Tracking de funil — dispara ao entrar em cada tela
-      trackScreen(screen.id);
 
       if (screen.setup) {
         screen.setup();

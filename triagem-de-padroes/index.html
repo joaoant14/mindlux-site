@@ -1388,1167 +1388,369 @@
     const screenViewport = document.getElementById("screen-viewport");
     const body = document.body;
 
-    // --- VARIÁVEIS DE TEXTO E MAPAS DE VALORES ---
-    const MAPA_AREA = {
-      A: "relacionamentos",
-      B: "exposição",
-      C: "projetos",
-      D: "sucesso",
-      E: "autocuidado"
-    };
+    // --- URL DO GOOGLE SHEETS ---
+    const SHEETS_URL = "https://script.google.com/macros/s/AKfycbz5L1mt7F8_CKe2hQ7J6IsUj-ESAWXDlkm4UaFkAggpFX64vGanIW3P3r7MM_uHso7p/exec";
 
-    const MAPA_TEMPO = {
-      1: "há pouco tempo",
-      2: "há anos",
-      3: "há tanto tempo que já parece parte de quem você é"
-    };
+    // --- MOTOR DE CÁLCULO ---
+    function calcularResultados() {
+      const r = state.responses;
 
-    const MAPA_TENTOU = {
-      1: "com terapia",
-      2: "lendo sobre o assunto",
-      3: "com práticas por conta própria",
-      4: "na base da força de vontade",
-      5: "e está chegando agora ao seu primeiro passo real"
-    };
+      // ARQUÉTIPO
+      // Protetor — medo de abandono e intimidade: Q6, Q7, Q11
+      let protetor = 0, invisivel = 0, controlador = 0, indigno = 0;
+      if (r.Q6 === "A") protetor += 3;        // isolado — sinal mais forte
+      if (r.Q6 === "B") protetor += 1;        // deseja conexão — sinal moderado
+      if (r.Q7 === "A") protetor += 3;        // dificuldade de confiar — sinal forte
+      if (r.Q7 === "B") protetor += 1;        // confia só nos próximos
+      if (r.Q11 === "C" || r.Q11 === "D") protetor += 2; // sente-se indesejado — reforça abandono
+      if (r.Q15 === "A") protetor += 1;       // evita conflito — sinal leve
 
-    const PROGRESS_MAP = {
-      "P1": 10,
-      "P2": 20,
-      "P3": 30,
-      "P4": 40,
-      "P5": 50,
-      "P6": 60,
-      "P7": 70,
-      "thermometer": 80,
-      "P8": 90,
-      "P9": 100
-    };
+      // Invisível — supressão emocional e evitação de exposição: Q4, Q15, Q16, Q13
+      if (r.Q4 === "A") invisivel += 3;       // guarda o que sente — sinal mais forte
+      if (r.Q4 === "B") invisivel += 1;       // se exprime parcialmente
+      if (r.Q15 === "A") invisivel += 2;      // evita conflito — sinal forte para invisível
+      if (r.Q16 === "A") invisivel += 2;      // leva crítica muito a sério
+      if (r.Q16 === "B") invisivel += 1;
+      if (r.Q13 === "A") invisivel += 1;      // sonhos parecem distantes — vida no volume baixo
 
-    // --- MAPA INTERNO DE PADRÕES POR PERFIL (Para injeção no resultado) ---
-    const PADROES_TEXTS = {
-      0: "procrastinar o que mais importa",
-      1: "agradar os outros antes de se agradar",
-      2: "ter dificuldade de dizer não",
-      3: "comparar suas conquistas com as dos outros",
-      4: "se criticar muito mais do que critica qualquer outra pessoa",
-      5: "evitar conflito mesmo quando ele é necessário",
-      6: "sabotar relacionamentos quando ficam sérios demais",
-      7: "diminuir suas conquistas na frente dos outros",
-      8: "travar na hora de aparecer ou se posicionar"
-    };
+      // Controlador — rigidez com incerteza e fracasso: Q20, Q17, Q19
+      // Q8 removido como peso forte — quase todos concordam com ele
+      if (r.Q20 === "A") controlador += 3;    // sobrecarregado com desconhecido — sinal mais forte
+      if (r.Q17 === "A") controlador += 3;    // fracasso = reflexo do valor — perfeccionismo/controle
+      if (r.Q19 === "A") controlador += 2;    // travado no crescimento — paralisia por controle
+      if (r.Q8 === "A") controlador += 1;     // passado influencia presente — peso reduzido
 
-    const PROFILE_CONFIRMERS = {
-      A: [1, 2, 5, 6], // Agradar, Dizer não, Evitar conflito, Sabotar relacionamentos
-      B: [3, 4, 7],    // Comparar, Autocrítica, Diminuir conquistas
-      C: [0, 4],       // Procrastinar, Autocrítica
-      D: [0, 5, 8]     // Procrastinar, Evitar conflito, Travar ao aparecer
-    };
+      // Indigno — falta de merecimento e baixa autoestima: Q3, Q5, Q10, Q12
+      if (r.Q3 === "A") indigno += 3;         // dificuldade de reconhecer valor — sinal forte
+      if (r.Q5 === "D") indigno += 3;         // quase sempre não se ama — sinal mais forte
+      if (r.Q5 === "C") indigno += 2;         // com frequência
+      if (r.Q10 === "A") indigno += 3;        // raramente se sente merecedor — sinal forte
+      if (r.Q10 === "B") indigno += 1;        // assombra às vezes
+      if (r.Q12 === "A") indigno += 2;        // não sente que conquistou muito
 
-    // --- CÁLCULO DE PADRÕES CONFIRMADORES DINÂMICOS ---
-    function getConfirmingPatterns(winnerProfile, selectedIndices) {
-      const candidates = PROFILE_CONFIRMERS[winnerProfile] || [];
-      
-      // Filtra os que o usuário selecionou e que pertencem ao perfil dominante
-      let matched = selectedIndices.filter(idx => candidates.includes(idx));
-      
-      // Se selecionou menos de 2, adicionamos outros do perfil que não foram selecionados
-      if (matched.length < 2) {
-        for (let candidate of candidates) {
-          if (!matched.includes(candidate)) {
-            matched.push(candidate);
-          }
-          if (matched.length === 2) break;
-        }
-      }
-      
-      // Se ainda assim for menor que 2, adicionamos quaisquer selecionados que não sejam do perfil
-      if (matched.length < 2) {
-        for (let idx of selectedIndices) {
-          if (!matched.includes(idx)) {
-            matched.push(idx);
-          }
-          if (matched.length === 2) break;
-        }
-      }
-      
-      // Fallback absoluto de emergência
-      if (matched.length < 2) {
-        const absoluteFallbacks = [0, 4, 1, 8];
-        for (let fb of absoluteFallbacks) {
-          if (!matched.includes(fb)) {
-            matched.push(fb);
-          }
-          if (matched.length === 2) break;
-        }
-      }
-      
-      const p1 = PADROES_TEXTS[matched[0]];
-      const p2 = PADROES_TEXTS[matched[1]];
-      
-      return `${p1} e ${p2}`;
+      const scoreMap = { protetor, invisivel, controlador, indigno };
+      state.arquetipo = Object.keys(scoreMap).reduce((a, b) => scoreMap[a] >= scoreMap[b] ? a : b);
+
+      // IMPACTO
+      let imp = 0;
+      if (r.Q5 === "C") imp += 2; if (r.Q5 === "D") imp += 3;
+      if (r.Q10 === "A") imp += 3; if (r.Q10 === "B") imp += 2;
+      if (r.Q11 === "C") imp += 2; if (r.Q11 === "D") imp += 3;
+      state.impacto = Math.min(94, Math.round(72 + (imp / 11) * 22));
+
+      // AUTOCONFIANÇA
+      let auto = 0;
+      if (r.Q3 === "A") auto += 3; if (r.Q3 === "B") auto += 1;
+      if (r.Q12 === "A") auto += 3; if (r.Q12 === "B") auto += 1;
+      if (r.Q14 === "A") auto += 3; if (r.Q14 === "B") auto += 1;
+      state.autoconfianca = Math.max(15, Math.round(45 - (auto / 9) * 30));
+
+      // PESSIMISMO
+      let pess = 0;
+      if (r.Q8 === "A") pess += 3; if (r.Q8 === "B") pess += 1;
+      if (r.Q17 === "A") pess += 3;
+      if (r.Q18 === "A") pess += 3; if (r.Q18 === "B") pess += 1;
+      state.pessimismo = Math.min(78, Math.round(45 + (pess / 12) * 33));
     }
 
-    // --- MOTOR DE CÁLCULO DE PERFIS E TERMÔMETRO ---
-    function calculateResults() {
-      let scores = { A: 0, B: 0, C: 0, D: 0 };
-      
-      // Perguntas de 2 a 6 pontuam perfil
-      const scoringQuestions = ["P2", "P3", "P4", "P5", "P6"];
-      scoringQuestions.forEach(q => {
-        const val = state.responses[q];
-        if (val && scores[val] !== undefined) {
-          scores[val]++;
-        }
-      });
-      
-      // Encontrar maior pontuação
-      let maxScore = -1;
-      let candidates = [];
-      for (let p in scores) {
-        if (scores[p] > maxScore) {
-          maxScore = scores[p];
-          candidates = [p];
-        } else if (scores[p] === maxScore) {
-          candidates.push(p);
-        }
+    // --- ARQUÉTIPOS ---
+    const ARQUETIPOS = {
+      protetor: {
+        nome: "O Protetor", sombra: "Sombra do Abandono",
+        descricao: "Você aprendeu cedo que se aproximar demais é arriscado. Então criou mecanismos invisíveis para se proteger — afastando quem chega perto, encontrando defeitos quando tudo vai bem, ou se fechando exatamente quando a relação fica real.",
+        lutas: ["Dificuldade de confiar nas pessoas","Afastar quem se aproxima","Medo de intimidade real","Antecipar a rejeição","Autossabotagem em relacionamentos"],
+        solucoes: ["Clareza emocional nas relações","Capacidade de receber afeto","Confiança sem garantia","Presença real com as pessoas","Relacionamentos que sustentam"]
+      },
+      invisivel: {
+        nome: "O Invisível", sombra: "Sombra da Invisibilidade",
+        descricao: "Você tem muito a dizer e muito a oferecer — mas algo dentro de você puxa o freio toda vez que é hora de aparecer. Não é timidez. É um mecanismo de proteção que aprendeu que ser visto é arriscado.",
+        lutas: ["Dificuldade de se posicionar","Engolir opiniões","Deixar outros levarem o crédito","Travar na hora de aparecer","Vida vivida no volume baixo"],
+        solucoes: ["Ocupar espaço com naturalidade","Expressar o que pensa","Ser visto sem medo","Presença autêntica","Reconhecimento real"]
+      },
+      controlador: {
+        nome: "O Controlador", sombra: "Sombra do Controle",
+        descricao: "Em algum momento o mundo te ensinou que relaxar é arriscado. Que se você não segurar tudo, algo vai desabar. Hoje essa proteção cobra um preço alto — em energia, em relações, em paz.",
+        lutas: ["Precisar controlar cada detalhe","Ansiedade com o imprevisível","Perfeccionismo paralisante","Dificuldade de delegar","Incapacidade de descansar"],
+        solucoes: ["Confiar no processo","Soltar sem ansiedade","Terminar sem peso do perfeito","Relacionamentos sem roteiro","Paz com o que não controla"]
+      },
+      indigno: {
+        nome: "O Indigno", sombra: "Sombra da Indignidade",
+        descricao: "Existe uma frase que vive no fundo de você, mesmo que nunca tenha dito em voz alta: isso não é pra mim. Ela aparece quando algo bom está perto — e faz você recuar, minimizar, ou destruir antes de perder.",
+        lutas: ["Não se sentir merecedor","Sabotar na linha de chegada","Dificuldade de receber","Minimizar conquistas","Autoestima dependente de validação"],
+        solucoes: ["Receber sem culpa","Aceitar o bom que chega","Saber que é suficiente","Conquistar sem autossabotagem","Valor interno estável"]
       }
-      
-      let winner = candidates[0];
-      if (candidates.length > 1) {
-        // Empate: prevalece a resposta da Pergunta 5
-        const p5Ans = state.responses["P5"];
-        if (candidates.includes(p5Ans)) {
-          winner = p5Ans;
-        } else {
-          winner = candidates[0];
-        }
-      }
-      
-      state.scores = scores;
-      state.winnerProfile = winner;
-      
-      // Lógica do termômetro
-      const winnerScore = scores[winner];
-      const selectedPatterns = state.responses["P7"] || [];
-      const patternCount = selectedPatterns.length;
-      let percent = 51;
-      let level = "Moderado";
-      
-      if (winnerScore >= 4 && patternCount >= 6) {
-        percent = 88; // entre 85% e 92%
-        level = "Alto";
-      } else if (winnerScore >= 3 && patternCount >= 4) {
-        percent = 72; // entre 65% e 80%
-        level = "Moderado-Alto";
-      } else {
-        percent = 51; // entre 45% e 60%
-        level = "Moderado";
-      }
-      
-      state.percentual = percent;
-      state.nivelImpacto = level;
-      
-      return { winner, percent, level };
-    }
+    };
 
-    // --- RECOLHA DE TEXTOS DO LAUDO DO RESULTADO E MOTOR DE INJEÇÃO ---
+    // --- LAUDOS ---
     const LAUDO_TEMPLATES = {
-      A: {
-        title: "A Sombra do Abandono",
+      protetor: {
         anchor: "Em algum momento da sua vida, você aprendeu uma lição silenciosa: chegar perto demais de alguém é perigoso.",
-        body: "Desde então, uma parte de você passou a trabalhar nos bastidores para impedir que essa queda aconteça. É ela que faz você achar defeito em quem se aproxima, criar uma briga quando tudo está bom, ou se fechar exatamente quando a relação começa a ficar real. Não é sabotagem por sabotagem. É proteção. Essa parte está convencida de que, se você sair primeiro, dói menos do que ser deixado.\n\nVocê marcou que [PADRÕES]. Isso não é coincidência. É a mesma Sombra operando em ângulos diferentes da sua vida.\n\nO problema é que essa proteção virou uma prisão. Ela te afasta justamente das pessoas e das coisas que você mais quer perto. E você convive com isso [TEMPO].\n\nVocê já tentou resolver isso [TENTOU], e percebeu algo importante: entender o padrão não bastou para mudá-lo. Porque essa Sombra não vive na sua mente racional. Ela vive mais fundo. E é lá que ela precisa ser encontrada.",
-        integration: "O que muda quando você integra essa sombra: você para de afastar quem ama. Consegue receber afeto sem esperar o golpe. Confia sem precisar de garantia. E descobre que pode ser inteiro com alguém, e que as pessoas certas ficam."
+        body: "Desde então, uma parte de você passou a trabalhar nos bastidores para impedir que essa queda aconteça. É ela que faz você achar defeito em quem se aproxima, criar uma briga quando tudo está bom, ou se fechar exatamente quando a relação começa a ficar real. Não é sabotagem por sabotagem. É proteção.\n\nO problema é que essa proteção virou uma prisão. Ela te afasta justamente das pessoas e das coisas que você mais quer perto.\n\nEntender o padrão não bastou para mudá-lo. Porque essa Sombra não vive na sua mente racional. Ela vive mais fundo. E é lá que ela precisa ser encontrada.",
+        integration: "Você para de afastar quem ama. Consegue receber afeto sem esperar o golpe. Confia sem precisar de garantia. E descobre que pode ser inteiro com alguém — e que as pessoas certas ficam."
       },
-      B: {
-        title: "A Sombra da Indignidade",
-        anchor: "Existe uma frase que vive no fundo de você, mesmo que você nunca a tenha dito em voz alta: \"isso não é pra mim\".",
-        body: "Ela não aparece como um pensamento claro. Aparece como uma sensação, bem no momento em que algo bom está perto. Uma oportunidade, um elogio, um relacionamento, um próximo nível. É aí que essa parte de você entra em ação, e você, sem perceber, começa a agir como se não merecesse aquilo. Você se contenta com menos. Minimiza o que conquista. Recua bem na hora de receber.\n\nVocê marcou que [PADRÕES]. Cada um desses padrões é a mesma Sombra falando por um canal diferente.\n\nEssa Sombra não nasceu com você. Em algum ponto, você aprendeu que precisava merecer o amor, o reconhecimento, o sucesso, que nada disso poderia simplesmente ser seu. E você convive com esse peso [TEMPO].\n\nVocê já tentou [TENTOU], e ainda assim a sensação voltou. Não porque você não se esforçou. Mas porque essa crença não se desfaz com informação. Ela se desfaz quando você encontra a origem dela e finalmente a vê de frente.",
-        integration: "O que muda quando você integra essa sombra: você para de se sabotar na linha de chegada. Recebe sem culpa. Aceita o bom que chega sem desconfiar dele. E acorda sabendo que é suficiente, não pelo que faz, mas por quem é."
-      },
-      C: {
-        title: "A Sombra do Controle",
-        anchor: "Em algum momento, o mundo te ensinou que relaxar é arriscado. Que, se você não segurar tudo, alguma coisa vai desabar.",
-        body: "Hoje existe uma parte de você que precisa controlar: o resultado, as pessoas, o que vão pensar, cada detalhe. Ela se disfarça de responsabilidade, de capricho, de querer bem feito. Mas o que está por baixo é medo. E é essa parte que faz você travar num projeto até estar perfeito, que cria tensão nas relações, que não consegue descansar enquanto houver uma só variável solta.\n\nVocê marcou que [PADRÕES]. São expressões diferentes do mesmo mecanismo: o controle como escudo contra o imprevisível.\n\nEssa Sombra já te serviu. Provavelmente foi ela que te manteve de pé em épocas difíceis. Mas hoje ela cobra um preço alto, e você sente esse cansaço [TEMPO].\n\nVocê já tentou [TENTOU], e descobriu que entender o controle não faz você soltá-lo. Porque soltar não é uma decisão da mente. É algo que acontece quando a parte assustada de você finalmente se sente segura.",
-        integration: "O que muda quando você integra essa sombra: você confia no processo sem segurar cada detalhe. Termina e entrega sem o peso do perfeito. Deixa as pessoas chegarem sem um roteiro. E descobre que a vida não desaba quando você respira."
-      },
-      D: {
-        title: "A Sombra da Invisibilidade",
+      invisivel: {
         anchor: "Você tem coisas a dizer. Tem talento, ideias, uma presença que poderia ocupar muito mais espaço do que ocupa hoje.",
-        body: "Mas existe uma parte de você que puxa o freio toda vez que chega a hora de aparecer. Essa parte não é timidez. É um mecanismo de proteção. Em algum momento, você aprendeu que ser visto é arriscado, que aparecer atrai julgamento, cobrança, ou a chance de falhar na frente dos outros. Então essa Sombra te mantém na sombra. Ela faz você adiar, engolir a opinião, deixar outro levar o crédito, ficar pequeno numa sala onde você tinha muito a contribuir.\n\nVocê marcou que [PADRÕES]. Cada um é a mesma Sombra te convencendo de que ainda não é hora.\n\nO resultado é uma vida vivida com o volume baixo. E você percebe isso [TEMPO].\n\nVocê já tentou [TENTOU], e mesmo assim continua se encolhendo. Não por falta de vontade. Mas porque essa Sombra não responde a vontade. Ela responde a segurança.",
-        integration: "O que muda quando você integra essa sombra: você aparece sem pedir licença. Mostra o que faz sem travar. Ocupa seu espaço sabendo que tem direito a ele. E para de adiar a versão de você que o mundo ainda nem viu."
+        body: "Mas existe uma parte de você que puxa o freio toda vez que chega a hora de aparecer. Essa parte não é timidez. É um mecanismo de proteção. Em algum momento, você aprendeu que ser visto é arriscado.\n\nEssa Sombra te mantém na sombra. Ela faz você adiar, engolir a opinião, deixar outro levar o crédito, ficar pequeno numa sala onde você tinha muito a contribuir.\n\nO resultado é uma vida vivida com o volume baixo.",
+        integration: "Você aparece sem pedir licença. Mostra o que faz sem travar. Ocupa seu espaço sabendo que tem direito a ele. E para de adiar a versão de você que o mundo ainda nem viu."
+      },
+      controlador: {
+        anchor: "Em algum momento, o mundo te ensinou que relaxar é arriscado. Que, se você não segurar tudo, alguma coisa vai desabar.",
+        body: "Hoje existe uma parte de você que precisa controlar: o resultado, as pessoas, o que vão pensar, cada detalhe. Ela se disfarça de responsabilidade, de capricho, de querer bem feito. Mas o que está por baixo é medo.\n\nEssa Sombra já te serviu. Provavelmente foi ela que te manteve de pé em épocas difíceis. Mas hoje ela cobra um preço alto.\n\nEntender o controle não faz você soltá-lo. Porque soltar não é uma decisão da mente. É algo que acontece quando a parte assustada de você finalmente se sente segura.",
+        integration: "Você confia no processo sem segurar cada detalhe. Termina e entrega sem o peso do perfeito. Deixa as pessoas chegarem sem um roteiro. E descobre que a vida não desaba quando você respira."
+      },
+      indigno: {
+        anchor: "Existe uma frase que vive no fundo de você, mesmo que você nunca a tenha dito em voz alta: isso não é pra mim.",
+        body: "Ela não aparece como um pensamento claro. Aparece como uma sensação, bem no momento em que algo bom está perto. Uma oportunidade, um elogio, um relacionamento, um próximo nível. É aí que essa parte de você entra em ação.\n\nEssa Sombra não nasceu com você. Em algum ponto, você aprendeu que precisava merecer o amor, o reconhecimento, o sucesso — que nada disso poderia simplesmente ser seu.\n\nEssa crença não se desfaz com informação. Ela se desfaz quando você encontra a origem dela e finalmente a vê de frente.",
+        integration: "Você para de se sabotar na linha de chegada. Recebe sem culpa. Aceita o bom que chega sem desconfiar dele. E acorda sabendo que é suficiente — não pelo que faz, mas por quem é."
       }
     };
 
-    function injectVariables(text) {
-      const areaText = MAPA_AREA[state.responses["P1"]] || "seu dia a dia";
-      const tempoText = MAPA_TEMPO[state.responses["P8"]] || "há algum tempo";
-      const tentouText = MAPA_TENTOU[state.responses["P9"]] || "de várias maneiras";
-      const padroesText = getConfirmingPatterns(state.winnerProfile, state.responses["P7"] || []);
+    // --- PROGRESS MAP ---
+    const PROGRESS_MAP = {
+      "Q1":5,"Q2":9,"Q3":13,"Q4":17,"Q5":21,"Q6":25,"Q7":30,
+      "Q8":35,"Q9":39,"Q10":43,"Q11":48,"Q12":52,"Q13":57,
+      "Q14":61,"Q15":65,"Q16":70,"Q17":74,"Q18":78,"Q19":83,
+      "Q20":87,"Q21":91,"Q22":95,"Q23":100
+    };
 
-      return text
-        .replaceAll("[NOME]", "Sua sombra dominante é")
-        .replaceAll("[ÁREA]", areaText)
-        .replaceAll("[PADRÕES]", padroesText)
-        .replaceAll("[TEMPO]", tempoText)
-        .replaceAll("[TENTOU]", tentouText)
-        .replaceAll("[PERCENTUAL]", state.percentual);
-    }
 
-    // --- SEQUÊNCIA COMPLETA DE PERGUNTAS E TELAS ---
+    // --- SEQUÊNCIA COMPLETA DE TELAS ---
     const SCREENS = [
-      // 1. TELA DE ENTRADA (Intro)
-      {
-        id: "intro",
-        type: "intro",
-        render: () => `
-          <div class="screen" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
-            <h1 class="headline-intro" style="text-align: center;">
-              Descubra sua sombra dominante com o método de 
-              <span style="color: var(--color-primary-glow);">mais de 90 anos</span> 
-              que já transformou a vida de 
-              <span style="color: var(--color-integration);">mais de 10 milhões de pessoas</span> 
-              ao redor do mundo.
-            </h1>
-            
-            <div style="background: rgba(75, 63, 212, 0.08); border: 1px solid rgba(139, 130, 240, 0.2); border-radius: 16px; padding: 24px 20px; text-align: center; margin-bottom: 28px; max-width: 500px;">
-              <p style="font-family: var(--font-serif); font-style: italic; color: var(--color-text-main); font-size: 1.05rem; line-height: 1.65; margin: 0 0 16px 0;">
-                "Até você tornar o inconsciente consciente, ele vai dirigir a sua vida e você vai chamá-lo de destino."
-              </p>
-              <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-                <img
-                  src="https://mindlux-site.vercel.app/triagem-de-padroes/jung-quote.webp"
-                  alt="Carl Jung"
-                  loading="lazy"
-                  style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-primary-glow); flex-shrink: 0;"
-                >
-                <span style="font-family: var(--font-sans); font-size: 0.9rem; font-weight: 600; color: var(--color-primary-glow);">— Carl Jung</span>
+      {id:"Q1",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 1 de 23</span><h2 class="question-title">O que você espera alcançar ao explorar sua sombra?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">🤝</span><span class="option-text">Fortalecer minha relação comigo mesmo</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">💚</span><span class="option-text">Curar feridas emocionais do passado</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">👥</span><span class="option-text">Melhorar meus relacionamentos com os outros</span><div class="option-marker"></div></button><button class="option-card" data-val="D"><span class="option-emoji">⭐</span><span class="option-text">Aumentar minha autoestima</span><div class="option-marker"></div></button><button class="option-card" data-val="E"><span class="option-emoji">🌱</span><span class="option-text">Crescer como pessoa</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q1")},
+      {id:"social_proof",type:"affirmation",render:()=>`<div class="screen"><div class="affirmation-box" style="max-width:560px;"><div style="text-align:center;margin-bottom:28px;"><div style="font-family:var(--font-serif);font-size:3rem;font-weight:700;color:var(--color-text-main);line-height:1;text-shadow:0 0 20px rgba(139,130,240,0.3);">10M+</div><div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--color-text-secondary);margin-top:4px;">vidas impactadas pelo método</div></div><p style="font-family:var(--font-sans);font-size:1.05rem;color:var(--color-text-secondary);line-height:1.7;text-align:center;margin-bottom:28px;">A psicologia analítica de Carl Jung é estudada e aplicada há mais de 90 anos em universidades, clínicas e centros de desenvolvimento pessoal no mundo todo. Este diagnóstico é baseado nesses mesmos princípios.</p><div style="width:100%;display:flex;flex-direction:column;gap:12px;margin-bottom:32px;"><div class="testimonial-card"><div class="testimonial-stars">⭐⭐⭐⭐⭐</div><p class="testimonial-text">"Passei anos tentando entender por que eu sempre destruía relacionamentos quando ficavam sérios. Quando li sobre a sombra do abandono, foi como alguém finalmente ligou a luz num quarto escuro."</p><p class="testimonial-author">— Carla S.</p></div><div class="testimonial-card"><div class="testimonial-stars">⭐⭐⭐⭐⭐</div><p class="testimonial-text">"Eu achava que era preguiça. Quando entendi que o que me travava não vivia na minha mente consciente, tudo mudou."</p><p class="testimonial-author">— Pedro Cardoso</p></div></div><button id="btn-sp-next" class="btn-primary">Continuar →</button></div></div>`,setup:()=>{document.getElementById("btn-sp-next").addEventListener("click",()=>nextScreen());}},
+      {id:"Q2",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 2 de 23</span><h2 class="question-title">Você já conhece o conceito de shadow work?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">✅</span><span class="option-text">Sim</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">❓</span><span class="option-text">Não</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q2")},
+      {id:"q2_response",type:"affirmation",render:()=>{const conhece=state.responses["Q2"]==="A";if(conhece){return `<div class="screen"><div class="affirmation-box"><span class="affirmation-badge">✧</span><h2 class="affirmation-text-lead">Ótimo!<br><br>Como você já conhece o shadow work, vamos te oferecer ferramentas mais profundas para potencializar sua transformação.<br><br>Lembre-se: a autoexploração nunca tem fim.</h2><button id="btn-q2r-next" class="btn-primary">Continuar →</button></div></div>`;}return `<div class="screen"><div class="affirmation-box"><span class="affirmation-badge">✧</span><h2 class="affirmation-text-lead">Não se preocupe.<br><br>Este diagnóstico é perfeito para iniciantes. Você será guiado em cada etapa do caminho.</h2><p style="font-family:var(--font-sans);font-size:1rem;color:var(--color-text-secondary);line-height:1.7;text-align:center;max-width:480px;margin-bottom:32px;">O Shadow Work, baseado nos ensinamentos de Carl Jung, ajuda você a descobrir e integrar aspectos escondidos de si mesmo — desbloqueando uma transformação real e duradoura.</p><button id="btn-q2r-next" class="btn-primary">Continuar →</button></div></div>`;},setup:()=>{document.getElementById("btn-q2r-next").addEventListener("click",()=>nextScreen());}},
+      {id:"Q3",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 3 de 23</span><h2 class="question-title">Como você se sente em relação a si mesmo?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">😔</span><span class="option-text">Tenho dificuldade de reconhecer meu próprio valor</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">🌤️</span><span class="option-text">Tenho momentos de autoaceitação</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🌟</span><span class="option-text">Estou orgulhoso de quem me tornei</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q3")},
+      {id:"Q4",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 4 de 23</span><h2 class="question-title">O quanto você se sente confortável expressando suas emoções?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">🤐</span><span class="option-text">Costumo guardar o que realmente sinto</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">🔸</span><span class="option-text">Me expresso, mas não completamente</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">💬</span><span class="option-text">Me expresso com liberdade</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q4")},
+      {id:"Q5",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 5 de 23</span><h2 class="question-title">Existem momentos em que você sente que não se ama?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">🌈</span><span class="option-text">Nunca</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">🌤️</span><span class="option-text">Raramente</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🌧️</span><span class="option-text">Com bastante frequência</span><div class="option-marker"></div></button><button class="option-card" data-val="D"><span class="option-emoji">⛈️</span><span class="option-text">Quase sempre</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q5")},
+      {id:"Q6",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 6 de 23</span><h2 class="question-title">Como você se sente em relação aos seus relacionamentos?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">🏝️</span><span class="option-text">Me sinto isolado</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">🤲</span><span class="option-text">Desejo conexões mais reais</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🌐</span><span class="option-text">Tenho uma rede forte e de apoio</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q6")},
+      {id:"Q7",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 7 de 23</span><h2 class="question-title">O quanto você confia nas pessoas?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">🔒</span><span class="option-text">Tenho dificuldade de confiar</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">🔑</span><span class="option-text">Confio principalmente em quem está próximo</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🤝</span><span class="option-text">Tenho confiança sólida nos meus relacionamentos</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q7")},
+      {id:"jung1",type:"affirmation",render:()=>`<div class="screen"><div class="affirmation-box"><span class="affirmation-badge" style="font-size:0.95rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;margin-bottom:24px;">A MENTE QUE MAPEOU A PSIQUE</span><img src="https://mindlux-site.vercel.app/triagem-de-padroes/jung-autoridade.jpg" alt="Carl Gustav Jung" loading="lazy" style="border-radius:50%;width:120px;height:120px;object-fit:cover;border:3px solid var(--color-primary-glow);margin-bottom:20px;box-shadow:0 0 20px rgba(139,130,240,0.25);"><h2 style="font-family:var(--font-serif);font-size:1.6rem;color:var(--color-text-main);margin-bottom:6px;">Carl Gustav Jung</h2><p style="font-family:var(--font-sans);color:var(--color-integration);margin-bottom:20px;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;font-size:0.85rem;">Fundador da psicologia analítica</p><p class="text-body" style="font-size:1.05rem;line-height:1.65;color:var(--color-text-secondary);max-width:500px;margin-bottom:20px;text-align:center;">Jung é um dos nomes que fundaram a psicologia moderna, juntamente a Freud. Seu trabalho é estudado e aplicado há quase um século, no mundo todo, até hoje.</p><hr style="width:40px;border:none;height:1px;background-color:var(--color-border);margin:0 auto 20px auto;"><p class="text-body" style="font-size:1.05rem;line-height:1.65;color:var(--color-text-secondary);max-width:500px;margin-bottom:20px;text-align:center;">Foi ele quem criou conceitos que você já usa sem perceber: introvertido, extrovertido, arquétipo. E um em especial:</p><p style="font-family:var(--font-serif);font-size:1.8rem;font-weight:700;color:var(--color-integration);text-shadow:0 0 10px rgba(34,184,160,0.3);text-transform:lowercase;margin-bottom:32px;text-align:center;">a sombra.</p><button id="btn-jung1-next" class="btn-primary">Continuar →</button></div></div>`,
+      setup:()=>{document.getElementById("btn-jung1-next").addEventListener("click",()=>nextScreen());}},
+      {id:"Q8",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 8 de 23</span><h2 class="question-title">O quanto você concorda: "meu passado influencia meu presente"?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">💯</span><span class="option-text">Concordo totalmente</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">👍</span><span class="option-text">Concordo</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🤔</span><span class="option-text">Discordo</span><div class="option-marker"></div></button><button class="option-card" data-val="D"><span class="option-emoji">❌</span><span class="option-text">Discordo totalmente</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q8")},
+      {id:"Q9",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 9 de 23</span><h2 class="question-title">Quais aspectos da sua sombra você gostaria de trabalhar?</h2><span style="font-size:0.95rem;color:var(--color-text-secondary);margin-top:4px;display:inline-block;">Você pode marcar mais de uma opção.</span></div><div class="options-list"><button class="option-card" data-index="0"><span class="option-emoji">😰</span><span class="option-text">Ansiedade</span><div class="option-marker"></div></button><button class="option-card" data-index="1"><span class="option-emoji">🚧</span><span class="option-text">Dificuldade com limites</span><div class="option-marker"></div></button><button class="option-card" data-index="2"><span class="option-emoji">💔</span><span class="option-text">Baixa autoestima</span><div class="option-marker"></div></button><button class="option-card" data-index="3"><span class="option-emoji">🫣</span><span class="option-text">Medo de rejeição</span><div class="option-marker"></div></button><button class="option-card" data-index="4"><span class="option-emoji">⏳</span><span class="option-text">Procrastinação</span><div class="option-marker"></div></button><button class="option-card" data-index="5"><span class="option-emoji">🌀</span><span class="option-text">Pensamento excessivo</span><div class="option-marker"></div></button><button class="option-card" data-index="6"><span class="option-emoji">😤</span><span class="option-text">Controle da raiva</span><div class="option-marker"></div></button></div><button id="btn-q9-next" class="btn-primary hidden-btn" style="margin-top:24px;">Continuar →</button></div>`,
+      setup:()=>setupMultipleChoiceGeneric("Q9")},
+      {id:"Q10",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 10 de 23</span><h2 class="question-title">Você se sente "não bom o suficiente"?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">😞</span><span class="option-text">Raramente me sinto merecedor</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">👻</span><span class="option-text">Isso me assombra às vezes</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">⚡</span><span class="option-text">Luto com isso todos os dias</span><div class="option-marker"></div></button><button class="option-card" data-val="D"><span class="option-emoji">🌟</span><span class="option-text">Acredito no meu potencial</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q10")},
+      {id:"Q11",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 11 de 23</span><h2 class="question-title">Com que frequência você se sente indesejado?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">🌈</span><span class="option-text">Nunca</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">🌤️</span><span class="option-text">Raramente</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🌧️</span><span class="option-text">Com bastante frequência</span><div class="option-marker"></div></button><button class="option-card" data-val="D"><span class="option-emoji">⛈️</span><span class="option-text">Quase sempre</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q11")},
+      {id:"Q12",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 12 de 23</span><h2 class="question-title">Como você se sente em relação às suas conquistas?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">😔</span><span class="option-text">Não sinto que conquistei muito</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">🔄</span><span class="option-text">Celebro, mas me comparo com os outros</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🏆</span><span class="option-text">Tenho orgulho da minha jornada única</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q12")},
+      {id:"Q13",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 13 de 23</span><h2 class="question-title">Como você se sente em relação aos seus sonhos?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">🌫️</span><span class="option-text">Meus sonhos parecem distantes</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">🚀</span><span class="option-text">Estou animado para realizá-los</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🧭</span><span class="option-text">Ainda estou descobrindo o caminho</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q13")},
+      {id:"jung2",type:"affirmation",render:()=>`<div class="screen"><div class="affirmation-box"><span class="affirmation-badge" style="font-size:0.95rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;margin-bottom:24px;">O QUE OPERA POR BAIXO</span><h2 style="font-family:var(--font-serif);font-size:1.6rem;color:var(--color-text-main);margin-bottom:24px;">A Sombra</h2><img src="https://mindlux-site.vercel.app/triagem-de-padroes/diagrama.png" alt="Diagrama Ego, Self e Sombra" loading="lazy" style="width:100%;max-width:280px;display:block;margin:0 auto 24px auto;border-radius:12px;"><p style="font-weight:700;font-size:1.1rem;color:var(--color-text-main);margin-bottom:16px;text-align:center;">Seu lado que você escondeu.</p><p class="text-body" style="font-size:1.05rem;line-height:1.65;color:var(--color-text-secondary);max-width:500px;margin-bottom:20px;text-align:center;">As emoções que foram rejeitadas, os desejos que pareciam errados, as partes de você que em algum momento receberam a mensagem de que não eram bem-vindas.</p><p style="font-style:italic;font-weight:500;color:var(--color-integration);font-size:1.15rem;line-height:1.6;margin-bottom:32px;text-align:center;">É ela que age quando você se sabota sem entender por quê.</p><button id="btn-jung2-next" class="btn-primary">Continuar →</button></div></div>`,
+      setup:()=>{document.getElementById("btn-jung2-next").addEventListener("click",()=>nextScreen());}},
+      {id:"Q14",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 14 de 23</span><h2 class="question-title">Como você lida com sentimentos de inadequação?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">🛑</span><span class="option-text">Trava completamente</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">👁️</span><span class="option-text">Reconheço e aceito o sentimento</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🔥</span><span class="option-text">Uso como motivação</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q14")},
+      {id:"Q15",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 15 de 23</span><h2 class="question-title">Como você reage diante de conflitos?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">🏃</span><span class="option-text">Costumo evitar</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">💬</span><span class="option-text">Enfrento, mas frequentemente me sinto incompreendido</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">⚖️</span><span class="option-text">Não tenho medo de lidar diretamente</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q15")},
+      {id:"Q16",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 16 de 23</span><h2 class="question-title">O quanto você concorda: "levo críticas para o lado pessoal e fico na defensiva"?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">💯</span><span class="option-text">Concordo totalmente</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">👍</span><span class="option-text">Concordo</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🤔</span><span class="option-text">Discordo</span><div class="option-marker"></div></button><button class="option-card" data-val="D"><span class="option-emoji">❌</span><span class="option-text">Discordo totalmente</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q16")},
+      {id:"Q17",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 17 de 23</span><h2 class="question-title">Como você lida com o fracasso?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">💔</span><span class="option-text">Fracasso parece um reflexo do meu valor como pessoa</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">📖</span><span class="option-text">Vejo como oportunidade de aprendizado</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🌱</span><span class="option-text">Encaro como parte natural do crescimento</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q17")},
+      {id:"jung3",type:"affirmation",render:()=>`<div class="screen"><div class="affirmation-box"><span class="affirmation-badge" style="font-size:0.95rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;margin-bottom:24px;">O DESTINO DO PROCESSO</span><h2 style="font-family:var(--font-serif);font-size:1.6rem;color:var(--color-text-main);margin-bottom:24px;">Individuação</h2><p class="text-body" style="font-size:1.05rem;line-height:1.65;color:var(--color-text-secondary);max-width:500px;margin-bottom:20px;text-align:center;">Jung descobriu que cada pessoa carrega dentro de si uma versão mais inteira, mais autêntica de si mesma. Não uma versão perfeita. A versão real.</p><p class="text-body" style="font-size:1.05rem;line-height:1.65;color:var(--color-text-secondary);max-width:500px;margin-bottom:20px;text-align:center;">O caminho até ela passa pela sombra. Integrar o que foi escondido é o que libera quem você de fato é.</p><hr style="width:60px;border:none;height:1px;background-color:var(--color-primary);margin:0 auto 24px auto;"><div style="background:rgba(75,63,212,0.1);border-left:3px solid var(--color-primary-glow);padding:20px;border-radius:12px;margin-bottom:32px;text-align:center;max-width:500px;width:100%;"><p style="font-style:italic;color:var(--color-text-main);font-size:1.05rem;line-height:1.6;margin-bottom:8px;">"Até você tornar o inconsciente consciente, ele vai dirigir a sua vida e você vai chamá-lo de destino."</p><p style="color:var(--color-primary-glow);font-weight:600;font-size:0.95rem;margin:0;">— Carl Jung</p></div><button id="btn-jung3-next" class="btn-primary">Continuar →</button></div></div>`,
+      setup:()=>{document.getElementById("btn-jung3-next").addEventListener("click",()=>nextScreen());}},
+      {id:"Q18",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 18 de 23</span><h2 class="question-title">Como você se sente em relação ao seu futuro?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">😰</span><span class="option-text">Ansioso e incerto</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">🎢</span><span class="option-text">Animado, mas ainda com medo de mudanças</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🌅</span><span class="option-text">Aberto a novas possibilidades</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q18")},
+      {id:"Q19",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 19 de 23</span><h2 class="question-title">Como você aborda seu crescimento pessoal?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">🪨</span><span class="option-text">Me sinto travado</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">🚪</span><span class="option-text">Sei o que quero, mas hesito em agir</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🧗</span><span class="option-text">Busco ativamente novos desafios</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q19")},
+      {id:"Q20",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 20 de 23</span><h2 class="question-title">Como você lida com o desconhecido na vida?</h2></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">😵</span><span class="option-text">Me sinto sobrecarregado</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">🌊</span><span class="option-text">Aceito a mudança, mas ainda tenho medo às vezes</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🧭</span><span class="option-text">Recebo bem e confio no processo</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q20")},
+      {id:"Q21",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 21 de 23</span><h2 class="question-title">Quais padrões negativos você quer quebrar na sua vida?</h2><span style="font-size:0.95rem;color:var(--color-text-secondary);margin-top:4px;display:inline-block;">Você pode marcar mais de uma opção.</span></div><div class="options-list"><button class="option-card" data-index="0"><span class="option-emoji">🪞</span><span class="option-text">Autodúvida</span><div class="option-marker"></div></button><button class="option-card" data-index="1"><span class="option-emoji">💎</span><span class="option-text">Perfeccionismo</span><div class="option-marker"></div></button><button class="option-card" data-index="2"><span class="option-emoji">🙋</span><span class="option-text">Agradar os outros</span><div class="option-marker"></div></button><button class="option-card" data-index="3"><span class="option-emoji">⏳</span><span class="option-text">Procrastinação</span><div class="option-marker"></div></button><button class="option-card" data-index="4"><span class="option-emoji">📊</span><span class="option-text">Comparação com os outros</span><div class="option-marker"></div></button><button class="option-card" data-index="5"><span class="option-emoji">🔪</span><span class="option-text">Autocrítica</span><div class="option-marker"></div></button><button class="option-card" data-index="6"><span class="option-emoji">🕊️</span><span class="option-text">Evitar conflito</span><div class="option-marker"></div></button><button class="option-card" data-index="7"><span class="option-emoji">😨</span><span class="option-text">Medo de fracassar</span><div class="option-marker"></div></button><button class="option-card" data-index="8"><span class="option-emoji">🔐</span><span class="option-text">Desconfiança nos outros</span><div class="option-marker"></div></button></div><button id="btn-q21-next" class="btn-primary hidden-btn" style="margin-top:24px;">Continuar →</button></div>`,
+      setup:()=>setupMultipleChoiceGeneric("Q21")},
+      {id:"citation_q21",type:"affirmation",render:()=>`<div class="screen"><div class="affirmation-box"><span class="affirmation-badge">✧</span><div style="background:rgba(75,63,212,0.1);border-left:3px solid var(--color-primary-glow);padding:24px;border-radius:12px;margin-bottom:32px;text-align:center;max-width:500px;width:100%;"><p style="font-family:var(--font-serif);font-size:1.3rem;font-style:italic;color:var(--color-text-main);line-height:1.65;margin-bottom:12px;">"O privilégio de uma vida inteira é tornar-se quem você realmente é."</p><p style="color:var(--color-primary-glow);font-weight:600;font-size:0.95rem;">— Carl Jung</p></div><p style="font-family:var(--font-sans);font-size:1rem;color:var(--color-text-secondary);line-height:1.7;text-align:center;max-width:480px;margin-bottom:32px;">A autenticidade emerge quando confrontamos nossas sombras — permitindo que nos tornemos quem realmente somos.</p><button id="btn-cq21-next" class="btn-primary">Continuar →</button></div></div>`,setup:()=>{document.getElementById("btn-cq21-next").addEventListener("click",()=>nextScreen());}},
+      {id:"Q22",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 22 de 23</span><h2 class="question-title">Qual é a sua faixa de idade?</h2><p style="font-size:0.95rem;color:var(--color-text-secondary);margin-top:8px;">Essa informação nos ajuda a personalizar seu resultado.</p></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">🌱</span><span class="option-text">18 – 29 anos</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">🌿</span><span class="option-text">30 – 39 anos</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🌳</span><span class="option-text">40 – 49 anos</span><div class="option-marker"></div></button><button class="option-card" data-val="D"><span class="option-emoji">🏔️</span><span class="option-text">50 anos ou mais</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q22")},
+      {id:"Q23",type:"question",render:()=>`<div class="screen"><div class="question-header"><span class="question-subtitle">Pergunta 23 de 23</span><h2 class="question-title">Qual é o seu gênero?</h2><p style="font-size:0.95rem;color:var(--color-text-secondary);margin-top:8px;">Isso nos ajuda a criar um plano mais alinhado à sua experiência.</p></div><div class="options-list"><button class="option-card" data-val="A"><span class="option-emoji">👨</span><span class="option-text">Masculino</span><div class="option-marker"></div></button><button class="option-card" data-val="B"><span class="option-emoji">👩</span><span class="option-text">Feminino</span><div class="option-marker"></div></button><button class="option-card" data-val="C"><span class="option-emoji">🌈</span><span class="option-text">Outro</span><div class="option-marker"></div></button></div></div>`,
+      setup:()=>setupSingleChoice("Q23")},
+      {id:"analysis",type:"analysis",render:()=>`<div class="screen"><div class="analysis-container"><div class="spinner-ring-container" aria-hidden="true"><div class="spinner-background-ring"></div><div class="spinner-spinning-ring"></div><div class="spinner-center-star">✧</div></div><h2 style="font-family:var(--font-serif);font-size:1.5rem;color:var(--color-text-main);text-align:center;margin-bottom:8px;">Criando seu plano personalizado</h2><p style="color:var(--color-text-secondary);font-size:0.95rem;text-align:center;margin-bottom:32px;">Isso leva alguns segundos...</p><div class="analysis-steps-list"><div class="analysis-step-row" id="loading-row-1"><span class="step-row-icon" id="loading-icon-1">&bull;</span><span>Identificando padrões de sombra</span></div><div class="analysis-step-row" id="loading-row-2"><span class="step-row-icon" id="loading-icon-2">&bull;</span><span>Calculando impacto na sua vida</span></div><div class="analysis-step-row" id="loading-row-3"><span class="step-row-icon" id="loading-icon-3">&bull;</span><span>Mapeando seu arquétipo dominante</span></div><div class="analysis-step-row" id="loading-row-4"><span class="step-row-icon" id="loading-icon-4">&bull;</span><span>Preparando seu resultado personalizado</span></div></div><div style="margin-top:40px;background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:16px;padding:20px;max-width:460px;width:100%;"><div style="display:flex;gap:4px;margin-bottom:8px;">⭐⭐⭐⭐⭐</div><p style="font-style:italic;color:var(--color-text-secondary);font-size:0.95rem;line-height:1.6;margin-bottom:10px;">"Nunca entendi por que eu me sabotava sempre que as coisas começavam a ir bem. Depois de trabalhar minha sombra, finalmente vi o padrão — e consegui parar. Foi a mudança mais importante que já fiz."</p><p style="font-size:0.85rem;font-weight:600;color:var(--color-text-main);">— Mariana R., 34 anos</p></div></div></div>`,
+      setup:()=>{
+        calcularResultados();
+        [1,2,3,4].forEach((step,index)=>{
+          setTimeout(()=>{
+            const row=document.getElementById(`loading-row-${step}`);
+            if(row)row.classList.add("active");
+            if(step<4){setTimeout(()=>{const r=document.getElementById(`loading-row-${step}`);const i=document.getElementById(`loading-icon-${step}`);if(r)r.classList.add("completed");if(i)i.innerHTML="✓";},700);}
+          },index*800);
+        });
+        setTimeout(()=>nextScreen(),4500);
+      }},
+      {id:"email",type:"email",render:()=>`<div class="screen" style="display:flex;flex-direction:column;align-items:center;"><div style="text-align:center;margin-bottom:32px;"><span style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.2em;color:var(--color-primary-glow);font-weight:600;">Seu resultado está pronto</span><h2 style="font-family:var(--font-serif);font-size:2rem;color:var(--color-text-main);margin-top:12px;line-height:1.3;">Digite seu email para receber seu Plano de Shadow Work personalizado</h2></div><div style="width:100%;max-width:440px;display:flex;flex-direction:column;gap:16px;"><input type="email" id="email-input" placeholder="seu@email.com" style="border:1px solid var(--color-border);border-radius:12px;padding:16px 18px;font-family:var(--font-sans);font-size:1.05rem;color:var(--color-text-main);background-color:var(--color-bg-card);outline:none;width:100%;"><p id="email-error" style="color:#ff5252;font-size:0.85rem;display:none;">Por favor, insira um email válido.</p><button id="btn-email-next" class="btn-primary" style="width:100%;padding:16px;">Ver meu resultado →</button><p style="font-size:0.82rem;color:var(--color-text-secondary);text-align:center;line-height:1.5;">🔒 Respeitamos sua privacidade. Seu email nunca será compartilhado.</p></div></div>`,
+      setup:()=>{
+        const input=document.getElementById("email-input");
+        const btn=document.getElementById("btn-email-next");
+        const err=document.getElementById("email-error");
+        input.addEventListener("focus",()=>{input.style.borderColor="var(--color-primary-glow)";});
+        input.addEventListener("blur",()=>{input.style.borderColor="var(--color-border)";});
+        btn.addEventListener("click",()=>{
+          const email=input.value.trim();
+          const valid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+          if(!valid){err.style.display="block";input.style.borderColor="#ff5252";return;}
+          err.style.display="none";
+          state.email=email;
+          const arqNome=ARQUETIPOS[state.arquetipo]?.nome||state.arquetipo;
+          fetch(SHEETS_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,arquetipo:arqNome,impacto:state.impacto+"%",autoconfianca:state.autoconfianca,pessimismo:state.pessimismo+"%"})}).catch(()=>{});
+          if(typeof gtag==="function")gtag('event','email_capturado',{arquetipo:arqNome});
+          if(typeof fbq==="function")fbq('track','Lead');
+          nextScreen();
+        });
+      }},
+      {id:"checkout1",type:"checkout",render:()=>`<div class="screen" style="display:flex;flex-direction:column;align-items:center;text-align:center;"><span style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.2em;color:var(--color-primary-glow);font-weight:600;margin-bottom:16px;">Seu diagnóstico</span><h2 style="font-family:var(--font-serif);font-size:1.8rem;color:var(--color-text-main);margin-bottom:8px;line-height:1.3;">O impacto da sua sombra na sua vida:</h2><div style="margin:32px 0;display:flex;flex-direction:column;align-items:center;"><div style="font-family:var(--font-serif);font-size:5rem;font-weight:700;color:var(--color-text-main);line-height:1;text-shadow:0 0 30px rgba(139,130,240,0.4);" id="impacto-val">0%</div><div style="display:inline-block;padding:6px 20px;border-radius:20px;background:rgba(220,50,50,0.15);border:1px solid rgba(220,50,50,0.3);color:#ff6b6b;font-size:0.85rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-top:8px;">Alto impacto</div><div style="width:100%;max-width:400px;height:12px;background:rgba(8,7,26,0.7);border-radius:6px;overflow:hidden;margin-top:24px;border:1px solid rgba(235,233,248,0.1);"><div id="impacto-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#ff6b6b 0%,#ff9a9a 100%);border-radius:6px;box-shadow:0 0 14px rgba(255,107,107,0.5);transition:width 1.8s cubic-bezier(0.25,1,0.5,1);"></div></div></div><p style="font-size:1.05rem;color:var(--color-text-secondary);line-height:1.7;max-width:480px;margin-bottom:32px;">Isso significa que uma parte significativa das suas decisões, reações e padrões está sendo dirigida por algo que ainda não foi integrado. Clique em continuar para descobrir o que está te travando.</p><button id="btn-c1-next" class="btn-primary" style="width:100%;max-width:400px;">Continuar →</button></div>`,
+      setup:()=>{
+        setTimeout(()=>{
+          const fill=document.getElementById("impacto-fill");
+          const val=document.getElementById("impacto-val");
+          if(fill)fill.style.width=state.impacto+"%";
+          if(val)val.innerText=state.impacto+"%";
+        },200);
+        document.getElementById("btn-c1-next").addEventListener("click",()=>nextScreen());
+      }},
+      {id:"checkout2",type:"checkout",render:()=>{
+        const arq=ARQUETIPOS[state.arquetipo]||ARQUETIPOS.indigno;
+        const lutasHtml=arq.lutas.map(l=>`<li style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;"><span style="color:#ff6b6b;font-weight:700;flex-shrink:0;">✗</span><span>${l}</span></li>`).join("");
+        const solucoesHtml=arq.solucoes.map(s=>`<li style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;"><span style="color:var(--color-integration);font-weight:700;flex-shrink:0;">✓</span><span>${s}</span></li>`).join("");
+        return `<div class="screen" style="display:flex;flex-direction:column;align-items:center;text-align:center;"><span style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.2em;color:var(--color-primary-glow);font-weight:600;margin-bottom:16px;">Seu arquétipo de sombra</span><h2 style="font-family:var(--font-serif);font-size:2.2rem;color:var(--color-primary-glow);margin-bottom:16px;">${arq.nome}</h2><p style="font-size:1.05rem;color:var(--color-text-secondary);line-height:1.7;max-width:480px;margin-bottom:32px;">${arq.descricao}</p><div style="width:100%;display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;"><div style="background:rgba(220,50,50,0.08);border:1px solid rgba(220,50,50,0.2);border-radius:16px;padding:20px;text-align:left;"><p style="font-weight:700;color:#ff6b6b;margin-bottom:12px;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.1em;">Desafios</p><ul style="list-style:none;padding:0;margin:0;font-size:0.9rem;color:var(--color-text-secondary);">${lutasHtml}</ul></div><div style="background:rgba(34,184,160,0.08);border:1px solid rgba(34,184,160,0.2);border-radius:16px;padding:20px;text-align:left;"><p style="font-weight:700;color:var(--color-integration);margin-bottom:12px;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.1em;">Com integração</p><ul style="list-style:none;padding:0;margin:0;font-size:0.9rem;color:var(--color-text-secondary);">${solucoesHtml}</ul></div></div><button id="btn-c2-next" class="btn-primary" style="width:100%;max-width:400px;">Continuar →</button></div>`;
+      },setup:()=>{document.getElementById("btn-c2-next").addEventListener("click",()=>nextScreen());}},
+      {id:"checkout3",type:"checkout",render:()=>`<div class="screen" style="display:flex;flex-direction:column;align-items:center;text-align:center;"><span style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.2em;color:var(--color-primary-glow);font-weight:600;margin-bottom:16px;">Seu sumário pessoal</span><h2 style="font-family:var(--font-serif);font-size:1.8rem;color:var(--color-text-main);margin-bottom:8px;line-height:1.3;">O quiz indica que padrões inconscientes podem estar limitando seu potencial.</h2><p style="font-size:1rem;color:var(--color-text-secondary);margin-bottom:32px;max-width:460px;">Esses números refletem os padrões identificados nas suas respostas.</p><div style="width:100%;max-width:460px;display:flex;flex-direction:column;gap:16px;margin-bottom:32px;"><div style="background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:16px;padding:24px;text-align:left;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-weight:600;color:var(--color-text-main);">Nível de autoconfiança</span><span style="font-family:var(--font-serif);font-size:1.8rem;font-weight:700;color:var(--color-primary-glow);">${state.autoconfianca}<span style="font-size:1rem;font-weight:400;color:var(--color-text-secondary);"> /100</span></span></div><div style="width:100%;height:8px;background:rgba(8,7,26,0.7);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${state.autoconfianca}%;background:linear-gradient(90deg,var(--color-primary),var(--color-primary-glow));border-radius:4px;"></div></div><p style="font-size:0.82rem;color:var(--color-text-secondary);margin-top:8px;">Parece que você frequentemente duvida do seu próprio valor.</p></div><div style="background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:16px;padding:24px;text-align:left;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-weight:600;color:var(--color-text-main);">Nível de pessimismo</span><span style="font-family:var(--font-serif);font-size:1.8rem;font-weight:700;color:#ff9a9a;">${state.pessimismo}%</span></div><div style="width:100%;height:8px;background:rgba(8,7,26,0.7);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${state.pessimismo}%;background:linear-gradient(90deg,#ff6b6b,#ff9a9a);border-radius:4px;"></div></div><p style="font-size:0.82rem;color:var(--color-text-secondary);margin-top:8px;">Parece que você frequentemente antecipa o fracasso antes mesmo de começar.</p></div></div><button id="btn-c3-next" class="btn-primary" style="width:100%;max-width:400px;">Continuar →</button></div>`,
+      setup:()=>{document.getElementById("btn-c3-next").addEventListener("click",()=>nextScreen());}},
+      {id:"checkout4",type:"checkout",render:()=>{
+        const arq=ARQUETIPOS[state.arquetipo]||ARQUETIPOS.indigno;
+        const items=[["🌑","Integrar "+arq.nome+" e parar de se sabotar"],["⚡","Aumentar sua motivação e clareza mental"],["💚","Melhorar seus relacionamentos de dentro pra fora"],["🎯","Desenvolver uma visão clara do seu futuro"],["🧠","Quebrar os ciclos de autossabotagem de uma vez"]];
+        return `<div class="screen" style="display:flex;flex-direction:column;align-items:center;text-align:center;"><span style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.2em;color:var(--color-primary-glow);font-weight:600;margin-bottom:16px;">Seu protocolo personalizado</span><h2 style="font-family:var(--font-serif);font-size:1.8rem;color:var(--color-text-main);margin-bottom:16px;line-height:1.3;">Conheça o Protocolo de Shadow Work que vai transformar sua vida.</h2><p style="font-size:1rem;color:var(--color-text-secondary);margin-bottom:32px;max-width:460px;">Desenvolvido com base em mais de 90 anos de psicologia analítica junguiana. Vai direto à raiz dos seus padrões.</p><div style="width:100%;max-width:460px;display:flex;flex-direction:column;gap:12px;margin-bottom:32px;text-align:left;">${items.map(([e,t])=>`<div style="display:flex;align-items:center;gap:12px;background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:12px;padding:16px;"><span style="font-size:1.4rem;flex-shrink:0;">${e}</span><span style="color:var(--color-text-main);font-size:0.98rem;">${t}</span></div>`).join("")}</div><button id="btn-c4-next" class="btn-primary" style="width:100%;max-width:400px;">Continuar →</button></div>`;
+      },setup:()=>{document.getElementById("btn-c4-next").addEventListener("click",()=>nextScreen());}},
+      {id:"checkout5",type:"checkout",render:()=>`<div class="screen" style="display:flex;flex-direction:column;align-items:center;text-align:center;"><span style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.2em;color:var(--color-primary-glow);font-weight:600;margin-bottom:16px;">O que está incluído</span><h2 style="font-family:var(--font-serif);font-size:1.8rem;color:var(--color-text-main);margin-bottom:8px;line-height:1.3;">Você vai ver resultados. Mais rápido do que imagina.</h2><p style="font-size:1rem;color:var(--color-text-secondary);margin-bottom:32px;max-width:460px;">3 dias. Um protocolo estruturado. Uma sombra integrada.</p><div style="width:100%;max-width:460px;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:32px;">${[["🌑","Protocolo de 3 dias","Um exercício central por dia"],["🧠","Baseado em Jung","90 anos de psicologia aplicada"],["⚡","Acesso imediato","PDF que você executa hoje"],["🎯","Linguagem direta","Sem misticismo, sem jargão"]].map(([e,t,d])=>`<div style="background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:16px;padding:20px;text-align:center;"><div style="font-size:2rem;margin-bottom:8px;">${e}</div><p style="font-weight:600;color:var(--color-text-main);font-size:0.9rem;margin-bottom:4px;">${t}</p><p style="font-size:0.8rem;color:var(--color-text-secondary);">${d}</p></div>`).join("")}</div><button id="btn-c5-next" class="btn-primary" style="width:100%;max-width:400px;">Continuar →</button></div>`,
+      setup:()=>{document.getElementById("btn-c5-next").addEventListener("click",()=>nextScreen());}},
+      {id:"checkout6",type:"checkout",render:()=>`<div class="screen" style="display:flex;flex-direction:column;align-items:center;text-align:center;"><span style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.2em;color:var(--color-primary-glow);font-weight:600;margin-bottom:16px;">O que dizem quem já fez</span><h2 style="font-family:var(--font-serif);font-size:1.8rem;color:var(--color-text-main);margin-bottom:32px;line-height:1.3;">Não acredite apenas em nós. Ouça quem já passou por isso.</h2><div style="width:100%;max-width:460px;display:flex;flex-direction:column;gap:16px;margin-bottom:32px;"><div class="testimonial-card"><div class="testimonial-stars">⭐⭐⭐⭐⭐</div><p class="testimonial-text">"Passei anos em terapia tentando entender por que eu sempre destruía relacionamentos quando ficavam sérios. Quando li sobre a sombra do abandono pela primeira vez, foi como alguém finalmente ligou a luz num quarto escuro."</p><p class="testimonial-author">— Carla S.</p></div><div class="testimonial-card"><div class="testimonial-stars">⭐⭐⭐⭐⭐</div><p class="testimonial-text">"Eu achava que era preguiça. Que faltava disciplina. Quando entendi que o que me travava não vivia na minha mente consciente, tudo mudou. Não era fraqueza. Era um padrão que eu podia finalmente ver."</p><p class="testimonial-author">— Pedro Cardoso</p></div><div class="testimonial-card"><div class="testimonial-stars">⭐⭐⭐⭐⭐</div><p class="testimonial-text">"Em 3 dias entendi mais sobre mim do que em anos tentando resolver isso com força de vontade. O protocolo vai direto ao ponto, sem enrolação."</p><p class="testimonial-author">— Ana L., 29 anos</p></div></div><button id="btn-c6-next" class="btn-primary" style="width:100%;max-width:400px;">Ver minha oferta →</button></div>`,
+      setup:()=>{document.getElementById("btn-c6-next").addEventListener("click",()=>nextScreen());}},
+      {id:"result",type:"result",render:()=>{
+        const arq=ARQUETIPOS[state.arquetipo]||ARQUETIPOS.indigno;
+        const laudo=LAUDO_TEMPLATES[state.arquetipo]||LAUDO_TEMPLATES.indigno;
+        return `<div class="screen"><div class="result-outer-container">
+          <header class="result-glow-header">
+            <div class="result-glow-halo" aria-hidden="true"></div>
+            <span class="result-top-badge">Seu Arquétipo Dominante</span>
+            <h1 class="result-main-title"><span class="profile-glow-name">${arq.nome}</span></h1>
+            <div style="display:flex;gap:12px;justify-content:center;margin-top:16px;flex-wrap:wrap;">
+              <div style="background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.3);border-radius:12px;padding:10px 16px;text-align:center;">
+                <div style="font-family:var(--font-serif);font-size:1.6rem;font-weight:700;color:#ff6b6b;">${state.impacto}%</div>
+                <div style="font-size:0.72rem;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.08em;">Impacto da sombra</div>
+              </div>
+              <div style="background:rgba(75,63,212,0.12);border:1px solid rgba(139,130,240,0.3);border-radius:12px;padding:10px 16px;text-align:center;">
+                <div style="font-family:var(--font-serif);font-size:1.6rem;font-weight:700;color:var(--color-primary-glow);">${state.autoconfianca} /100</div>
+                <div style="font-size:0.72rem;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.08em;">Autoconfiança</div>
+              </div>
+              <div style="background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.3);border-radius:12px;padding:10px 16px;text-align:center;">
+                <div style="font-family:var(--font-serif);font-size:1.6rem;font-weight:700;color:#ff9a9a;">${state.pessimismo}%</div>
+                <div style="font-size:0.72rem;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.08em;">Pessimismo</div>
               </div>
             </div>
-            
-            <p class="text-body" style="margin-bottom: 24px;">
-              Chega de repetir os mesmos padrões sem entender por quê.
-            </p>
-            
-            <button id="btn-start-quiz" class="btn-primary" style="margin-top: 8px;">
-              Sim, quero descobrir minha sombra →
-            </button>
-          </div>
-        `,
-        setup: () => {
-          document.getElementById("btn-start-quiz").addEventListener("click", () => nextScreen());
-        }
-      },
+          </header>
 
-      // 2. PERGUNTA 1 de 9 — Área (não pontua perfil)
-      {
-        id: "P1",
-        type: "question",
-        render: () => `
-          <div class="screen">
-            <div class="question-header">
-              <span class="question-subtitle">Pergunta 1 de 9</span>
-              <h2 class="question-title">Com qual dessas situações você mais se identifica?</h2>
-            </div>
-            <div class="options-list">
-              <button class="option-card" data-val="A">
-                <span class="option-emoji">💔</span>
-                <span class="option-text">Nos meus relacionamentos. Alguém chega perto de verdade e eu dou um jeito de afastar, ou começo a achar defeito em tudo.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="B">
-                <span class="option-emoji">👁️</span>
-                <span class="option-text">Na hora de me mostrar. Não falo o que penso, não apareço, fico pequeno mesmo quando tenho algo a dizer.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="C">
-                <span class="option-emoji">📋</span>
-                <span class="option-text">Nos meus projetos. Começo empolgado e largo no meio, ou fico aperfeiçoando tanto que nunca termino.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="D">
-                <span class="option-emoji">⚡</span>
-                <span class="option-text">Quando as coisas vão bem. Chego perto de conseguir o que quero e, sem entender direito, faço algo que põe tudo a perder.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="E">
-                <span class="option-emoji">🌿</span>
-                <span class="option-text">Comigo mesmo. Largo a saúde, abandono as rotinas que me faziam bem, e me deixo sempre por último.</span>
-                <div class="option-marker"></div>
-              </button>
-            </div>
+          <div style="text-align:center;padding:0 8px;">
+            <p class="result-paragraph" style="font-family:var(--font-serif);font-size:1.2rem;color:var(--color-text-main);font-style:italic;line-height:1.6;text-align:center;">"${laudo.anchor}"</p>
           </div>
-        `,
-        setup: () => setupSingleChoice("P1")
-      },
 
-      // 3. AFIRMAÇÃO JUNG 1
-      {
-        id: "jung1",
-        type: "affirmation",
-        render: () => `
-          <div class="screen">
-            <div class="affirmation-box">
-              <span class="affirmation-badge" style="font-size: 0.95rem; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; margin-bottom: 24px;">A MENTE QUE MAPEOU A PSIQUE</span>
-              
-              <img src="https://mindlux-site.vercel.app/triagem-de-padroes/jung-autoridade.jpg" 
-                   alt="Carl Gustav Jung" 
-                   loading="lazy"
-                   style="border-radius: 50%; width: 120px; height: 120px; object-fit: cover; border: 3px solid var(--color-primary-glow); margin-bottom: 20px; box-shadow: 0 0 20px rgba(139, 130, 240, 0.25);">
-              
-              <h2 style="font-family: var(--font-serif); font-size: 1.6rem; color: var(--color-text-main); margin-bottom: 6px;">Carl Gustav Jung</h2>
-              <p style="font-family: var(--font-sans); color: var(--color-integration); margin-bottom: 20px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.85rem;">Fundador da psicologia analítica</p>
-              
-              <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 500px; margin-bottom: 20px; text-align: center;">
-                Jung é um dos nomes que fundaram a psicologia moderna, juntamente a Freud. Seu trabalho é estudado e aplicado há quase um século, no mundo todo, até hoje.
-              </p>
-              
-              <hr style="width: 40px; border: none; height: 1px; background-color: var(--color-border); margin: 0 auto 20px auto;">
-              
-              <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 500px; margin-bottom: 20px; text-align: center;">
-                Foi ele quem criou conceitos que você já usa sem perceber: introvertido, extrovertido, arquétipo. E um em especial:
-              </p>
-              
-              <p style="font-family: var(--font-serif); font-size: 1.8rem; font-weight: 700; color: var(--color-integration); text-shadow: 0 0 10px rgba(34, 184, 160, 0.3); text-transform: lowercase; margin-bottom: 32px; text-align: center;">
-                a sombra.
-              </p>
-              
-              <button id="btn-jung1-next" class="btn-primary">Continuar →</button>
-            </div>
-          </div>
-        `,
-        setup: () => {
-          document.getElementById("btn-jung1-next").addEventListener("click", () => nextScreen());
-        }
-      },
+          <section class="integration-box-card">
+            <h3 class="integration-box-title">O que muda quando você integra essa sombra</h3>
+            <p class="integration-box-text">${laudo.integration}</p>
+          </section>
 
-      // 4. PERGUNTA 2 de 9 — Mecanismo pelo medo (pontua perfil)
-      {
-        id: "P2",
-        type: "question",
-        render: () => `
-          <div class="screen">
-            <div class="question-header">
-              <span class="question-subtitle">Pergunta 2 de 9</span>
-              <h2 class="question-title">Quando você está prestes a se sabotar, o que pesa mais por dentro?</h2>
-            </div>
-            <div class="options-list">
-              <button class="option-card" data-val="A">
-                <span class="option-emoji">🛡️</span>
-                <span class="option-text">Um medo de que, se eu me entregar de verdade, vou acabar magoado ou abandonado.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="B">
-                <span class="option-emoji">🎁</span>
-                <span class="option-text">Uma sensação de que aquilo de bom não é pra mim, de que eu não mereço.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="C">
-                <span class="option-emoji">⚙️</span>
-                <span class="option-text">Um incômodo de não ter controle, de não saber como aquilo vai terminar.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="D">
-                <span class="option-emoji">🎭</span>
-                <span class="option-text">Um medo de que, se as coisas derem certo, vão esperar mais de mim do que eu consigo dar.</span>
-                <div class="option-marker"></div>
-              </button>
-            </div>
-          </div>
-        `,
-        setup: () => setupSingleChoice("P2")
-      },
+          <div style="width:100%;margin-top:8px;">
 
-      // 5. PERGUNTA 3 de 9 — Mecanismo pelo desejo (pontua perfil)
-      {
-        id: "P3",
-        type: "question",
-        render: () => `
-          <div class="screen">
-            <div class="question-header">
-              <span class="question-subtitle">Pergunta 3 de 9</span>
-              <h2 class="question-title">O que você mais quer conseguir, mas sente que algo dentro de você não deixa?</h2>
+            <div style="background:rgba(220,50,50,0.08);border:1px solid rgba(220,50,50,0.25);border-radius:16px;padding:20px 16px;text-align:center;margin-bottom:20px;">
+              <p style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.15em;color:#ff6b6b;font-weight:600;margin-bottom:8px;">⏱ Oferta com desconto expira em</p>
+              <div id="timer-display" style="font-family:var(--font-serif);font-size:3rem;font-weight:700;color:var(--color-text-main);line-height:1;letter-spacing:0.05em;">18:00</div>
+              <p style="font-size:0.75rem;color:var(--color-text-secondary);margin-top:8px;line-height:1.4;">Este é um timer real. Quando chegar a zero, o preço com desconto expira.</p>
             </div>
-            <div class="options-list">
-              <button class="option-card" data-val="A">
-                <span class="option-emoji">🤝</span>
-                <span class="option-text">Me entregar de verdade pra alguém, sem ficar esperando o pior.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="B">
-                <span class="option-emoji">✨</span>
-                <span class="option-text">Receber as coisas boas que chegam sem sentir que não são pra mim.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="C">
-                <span class="option-emoji">🍃</span>
-                <span class="option-text">Deixar as coisas fluírem sem precisar controlar cada passo.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="D">
-                <span class="option-emoji">🔊</span>
-                <span class="option-text">Aparecer, me posicionar e ocupar meu espaço sem travar.</span>
-                <div class="option-marker"></div>
-              </button>
-            </div>
-          </div>
-        `,
-        setup: () => setupSingleChoice("P3")
-      },
 
-      // 6. AFIRMAÇÃO JUNG 2
-      {
-        id: "jung2",
-        type: "affirmation",
-        render: () => `
-          <div class="screen">
-            <div class="affirmation-box">
-              <span class="affirmation-badge" style="font-size: 0.95rem; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; margin-bottom: 24px;">O QUE OPERA POR BAIXO</span>
-              
-              <h2 style="font-family: var(--font-serif); font-size: 1.6rem; color: var(--color-text-main); margin-bottom: 24px;">A Sombra</h2>
-              
-              <img 
-                src="https://mindlux-site.vercel.app/triagem-de-padroes/diagrama.png" 
-                alt="Diagrama Ego, Self e Sombra" 
-                loading="lazy"
-                style="width: 100%; max-width: 280px; display: block; margin: 0 auto 24px auto; border-radius: 12px;"
-              >
-              
-              <p style="font-weight: 700; font-size: 1.1rem; color: var(--color-text-main); margin-bottom: 16px; text-align: center;">Seu lado que você escondeu.</p>
-              
-              <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 500px; margin-bottom: 20px; text-align: center;">
-                As emoções que foram rejeitadas, os desejos que pareciam errados, as partes de você que em algum momento receberam a mensagem de que não eram bem-vindas.
-              </p>
-              
-              <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 500px; margin-bottom: 24px; text-align: center;">
-                Você não nasceu com ela escondida. Ela foi empurrada para baixo. E tudo que é empurrado para baixo não desaparece — continua operando, só que agora fora da sua visão.
-              </p>
-              
-              <p style="font-style: italic; font-weight: 500; color: var(--color-integration); font-size: 1.15rem; line-height: 1.6; margin-bottom: 32px; text-align: center;">
-                É ela que age quando você se sabota sem entender por quê.
-              </p>
-              
-              <button id="btn-jung2-next" class="btn-primary">Continuar →</button>
-            </div>
-          </div>
-        `,
-        setup: () => {
-          document.getElementById("btn-jung2-next").addEventListener("click", () => nextScreen());
-        }
-      },
+            <div style="background:var(--color-bg-product);border:1px solid var(--color-border);border-radius:20px;overflow:hidden;box-shadow:0 0 40px rgba(75,63,212,0.15);">
 
-      // 7. PERGUNTA 4 de 9 — Comportamento após sabotar (pontua perfil)
-      {
-        id: "P4",
-        type: "question",
-        render: () => `
-          <div class="screen">
-            <div class="question-header">
-              <span class="question-subtitle">Pergunta 4 de 9</span>
-              <h2 class="question-title">Quando você desiste de algo que importava, o que você costuma fazer logo depois?</h2>
-            </div>
-            <div class="options-list">
-              <button class="option-card" data-val="A">
-                <span class="option-emoji">🌀</span>
-                <span class="option-text">Fico remoendo sozinho. Sei que fui eu que me afastei, e isso fica pesando.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="B">
-                <span class="option-emoji">🚪</span>
-                <span class="option-text">Concluo que talvez aquilo nunca tenha sido mesmo pra mim.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="C">
-                <span class="option-emoji">📝</span>
-                <span class="option-text">Já começo a planejar como vou fazer diferente e melhor da próxima vez.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="D">
-                <span class="option-emoji">⏭️</span>
-                <span class="option-text">Passo pra frente rápido. Me ocupo com outra coisa pra não pensar naquilo.</span>
-                <div class="option-marker"></div>
-              </button>
-            </div>
-          </div>
-        `,
-        setup: () => setupSingleChoice("P4")
-      },
-
-      // 8. PERGUNTA 5 de 9 — O que é mais difícil / desempate (pontua perfil)
-      {
-        id: "P5",
-        type: "question",
-        render: () => `
-          <div class="screen">
-            <div class="question-header">
-              <span class="question-subtitle">Pergunta 5 de 9</span>
-              <h2 class="question-title">Olhando com honestidade, o que é mais difícil pra você?</h2>
-            </div>
-            <div class="options-list">
-              <button class="option-card" data-val="A">
-                <span class="option-emoji">🔓</span>
-                <span class="option-text">Confiar que alguém pode chegar perto e escolher ficar.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="B">
-                <span class="option-emoji">👑</span>
-                <span class="option-text">Acreditar que você merece as coisas boas que conquista.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="C">
-                <span class="option-emoji">🌬️</span>
-                <span class="option-text">Soltar o controle e confiar que vai dar certo sem você segurar tudo.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="D">
-                <span class="option-emoji">🪟</span>
-                <span class="option-text">Deixar que vejam quem você realmente é, sem se encolher.</span>
-                <div class="option-marker"></div>
-              </button>
-            </div>
-          </div>
-        `,
-        setup: () => setupSingleChoice("P5")
-      },
-
-      // 9. AFIRMAÇÃO JUNG 3
-      {
-        id: "jung3",
-        type: "affirmation",
-        render: () => `
-          <div class="screen">
-            <div class="affirmation-box">
-              <span class="affirmation-badge" style="font-size: 0.95rem; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; margin-bottom: 24px;">O DESTINO DO PROCESSO</span>
-              
-              <h2 style="font-family: var(--font-serif); font-size: 1.6rem; color: var(--color-text-main); margin-bottom: 24px;">Individuação</h2>
-              
-              <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 500px; margin-bottom: 20px; text-align: center;">
-                Jung descobriu que cada pessoa carrega dentro de si uma versão mais inteira, mais autêntica de si mesma. Não uma versão perfeita. A versão real.
-              </p>
-              
-              <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 500px; margin-bottom: 20px; text-align: center;">
-                O caminho até ela passa pela sombra. Integrar o que foi escondido é o que libera quem você de fato é.
-              </p>
-              
-              <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; color: var(--color-text-secondary); max-width: 500px; margin-bottom: 20px; text-align: center;">
-                Ele chamou esse processo de individuação. Tornar-se, finalmente, você mesmo.
-              </p>
-              
-              <hr style="width: 60px; border: none; height: 1px; background-color: var(--color-primary); margin: 0 auto 24px auto;">
-              
-              <div style="background: rgba(75, 63, 212, 0.1); border-left: 3px solid var(--color-primary-glow); padding: 20px; border-radius: 12px; margin-bottom: 32px; text-align: center; max-width: 500px; width: 100%;">
-                <p style="font-style: italic; color: var(--color-text-main); font-size: 1.05rem; line-height: 1.6; margin-bottom: 8px; text-align: center;">
-                  "Até você tornar o inconsciente consciente, ele vai dirigir a sua vida e você vai chamá-lo de destino."
-                </p>
-                <p style="color: var(--color-primary-glow); font-weight: 600; font-size: 0.95rem; margin: 0; text-align: center;">
-                  — Carl Jung
-                </p>
+              <div style="background:linear-gradient(90deg,#1A9E6E,#22B8A0);padding:10px 20px;text-align:center;">
+                <span style="font-family:var(--font-sans);font-weight:700;font-size:0.9rem;color:#fff;letter-spacing:0.04em;">🔥 82% DE DESCONTO — APENAS HOJE</span>
               </div>
-              
-              <button id="btn-jung3-next" class="btn-primary">Continuar →</button>
-            </div>
-          </div>
-        `,
-        setup: () => {
-          document.getElementById("btn-jung3-next").addEventListener("click", () => nextScreen());
-        }
-      },
 
-      // 10. PERGUNTA 6 de 9 — Relação com reconhecimento (pontua perfil)
-      {
-        id: "P6",
-        type: "question",
-        render: () => `
-          <div class="screen">
-            <div class="question-header">
-              <span class="question-subtitle">Pergunta 6 de 9</span>
-              <h2 class="question-title">Quando alguém te elogia ou reconhece o que você fez, o que acontece por dentro?</h2>
-            </div>
-            <div class="options-list">
-              <button class="option-card" data-val="A">
-                <span class="option-emoji">🔍</span>
-                <span class="option-text">Bate uma desconfiança. Fico esperando o momento em que a pessoa vai mudar de ideia sobre mim.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="B">
-                <span class="option-emoji">📉</span>
-                <span class="option-text">Acho, no fundo, que exageraram. Que não foi pra tanto.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="C">
-                <span class="option-emoji">📋</span>
-                <span class="option-text">Aceito, mas já penso em tudo que ainda podia ter feito melhor.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="D">
-                <span class="option-emoji">🏃</span>
-                <span class="option-text">Fico sem jeito e desvio rápido. Mudo de assunto pra sair dos holofotes.</span>
-                <div class="option-marker"></div>
-              </button>
-            </div>
-          </div>
-        `,
-        setup: () => setupSingleChoice("P6")
-      },
+              <div style="padding:28px 24px;">
+                <span style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--color-text-secondary);font-weight:600;">TRABALHO INTERIOR · PROTOCOLO</span>
+                <h3 style="font-family:var(--font-serif);font-size:1.8rem;color:var(--color-text-main);margin:8px 0;">O Protocolo dos 3 Dias</h3>
+                <p style="color:var(--color-integration);font-size:1rem;margin-bottom:24px;">Três dias. Um protocolo. Uma sombra integrada.</p>
 
-      // 11. PERGUNTA 7 de 9 — Seleção múltipla de padrões (não pontua perfil)
-      {
-        id: "P7",
-        type: "question",
-        render: () => `
-          <div class="screen">
-            <div class="question-header">
-              <span class="question-subtitle">Pergunta 7 de 9</span>
-              <h2 class="question-title">Quais desses padrões você reconhece em você?</h2>
-              <span style="font-size: 0.95rem; color: var(--color-text-secondary); margin-top: 4px; display: inline-block;">Você pode marcar mais de uma opção.</span>
-            </div>
-            <div class="options-list">
-              <button class="option-card" data-index="0">
-                <span class="option-emoji">⏳</span>
-                <span class="option-text">Procrastinar o que mais importa</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-index="1">
-                <span class="option-emoji">🙋</span>
-                <span class="option-text">Agradar os outros antes de me agradar</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-index="2">
-                <span class="option-emoji">🙅</span>
-                <span class="option-text">Dificuldade de dizer não</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-index="3">
-                <span class="option-emoji">📊</span>
-                <span class="option-text">Comparar minhas conquistas com as dos outros</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-index="4">
-                <span class="option-emoji">🪞</span>
-                <span class="option-text">Me criticar muito mais do que critico qualquer outra pessoa</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-index="5">
-                <span class="option-emoji">🕊&zwj;♀️</span>
-                <span class="option-text">Evitar conflito mesmo quando ele é necessário</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-index="6">
-                <span class="option-emoji">💔</span>
-                <span class="option-text">Sabotar relacionamentos quando ficam sérios demais</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-index="7">
-                <span class="option-emoji">🔇</span>
-                <span class="option-text">Diminuir minhas conquistas na frente dos outros</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-index="8">
-                <span class="option-emoji">🫥</span>
-                <span class="option-text">Travar na hora de aparecer ou me posicionar</span>
-                <div class="option-marker"></div>
-              </button>
-            </div>
-            <button id="btn-p7-next" class="btn-primary hidden-btn" style="margin-top: 24px;">Ver meu termômetro →</button>
-          </div>
-        `,
-        setup: () => setupMultipleChoice()
-      },
+                <ul class="product-features-list">
+                  <li><span class="feature-emoji">🌑</span><span class="feature-text">Protocolo completo de 3 dias com exercício central por dia</span></li>
+                  <li><span class="feature-emoji">📍</span><span class="feature-text">Objetivo claro, prática específica e comprometimento real em cada dia</span></li>
+                  <li><span class="feature-emoji">🧠</span><span class="feature-text">Linguagem direta, sem misticismo e sem jargão de terapia</span></li>
+                  <li><span class="feature-emoji">⚡</span><span class="feature-text">Acesso imediato em PDF — você executa hoje</span></li>
+                </ul>
 
-      // 12. TELA DO TERMÔMETRO (Exibe resultado e percentual)
-      {
-        id: "thermometer",
-        type: "thermometer",
-        render: () => `
-          <div class="screen">
-            <div class="question-header">
-              <span class="question-subtitle">Termômetro da Sombra</span>
-              <h2 class="question-title" style="font-size: 1.6rem;">Impacto da sua Sombra Dominante</h2>
-            </div>
-            
-            <div class="thermometer-wrapper">
-              <div class="thermometer-value" id="thermo-val">0%</div>
-              <div class="thermometer-badge" id="thermo-badge">Calculando...</div>
-              
-              <div class="thermometer-track" aria-hidden="true">
-                <div class="thermometer-fill" id="thermo-fill"></div>
+                <div style="text-align:center;margin:28px 0 8px 0;">
+                  <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:4px;">
+                    <span style="font-size:1rem;color:var(--color-text-secondary);text-decoration:line-through;">R$ 109,90</span>
+                    <span style="background:rgba(26,158,110,0.2);color:#22B8A0;font-size:0.8rem;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid rgba(34,184,160,0.3);">-82%</span>
+                  </div>
+                  <div style="font-family:var(--font-serif);font-size:4rem;font-weight:700;color:var(--color-text-main);line-height:1;">R$ 19,90</div>
+                  <p style="font-size:0.82rem;color:var(--color-text-secondary);margin-top:6px;">menos de R$ 0,70 por dia de protocolo</p>
+                </div>
+
+                <button id="btn-buy-protocol" class="btn-buy-now" style="margin-top:20px;font-size:1.05rem;min-height:60px;border-radius:14px;">
+                  QUERO INTEGRAR MINHA SOMBRA AGORA →
+                </button>
+
+                <div style="margin-top:20px;background:rgba(75,63,212,0.06);border:1px solid rgba(139,130,240,0.15);border-radius:12px;padding:16px;display:flex;align-items:flex-start;gap:12px;">
+                  <span style="font-size:1.5rem;flex-shrink:0;">🛡️</span>
+                  <div>
+                    <p style="font-weight:600;color:var(--color-text-main);font-size:0.9rem;margin-bottom:4px;">Garantia de 7 dias</p>
+                    <p style="font-size:0.82rem;color:var(--color-text-secondary);line-height:1.5;">Se o protocolo não fizer sentido pra você por qualquer motivo, devolvemos 100% do valor. Sem perguntas.</p>
+                  </div>
+                </div>
+
+                <p style="text-align:center;font-size:0.8rem;color:var(--color-text-secondary);margin-top:16px;">🔒 Pagamento 100% seguro · Acesso imediato após confirmação</p>
               </div>
             </div>
-
-            <p class="text-body" style="font-size: 1.05rem; line-height: 1.65; max-width: 540px; align-self: center;">
-              Isso significa que uma parte significativa das suas decisões, reações e padrões está sendo dirigida por algo que ainda não foi integrado.
-            </p>
-            
-            <button id="btn-thermo-next" class="btn-primary">Quero entender o que está por trás disso →</button>
           </div>
-        `,
-        setup: () => {
-          // Garante cálculo recente
-          const results = calculateResults();
-          
-          const thermoValEl = document.getElementById("thermo-val");
-          const thermoBadgeEl = document.getElementById("thermo-badge");
-          const thermoFillEl = document.getElementById("thermo-fill");
-          
-          // Anima o percentual
-          thermoBadgeEl.innerText = results.level;
-          thermoValEl.innerText = `${results.percent}%`;
-          
-          // Atraso de micropausa para disparar a transição CSS de width
-          setTimeout(() => {
-            if (thermoFillEl) {
-              thermoFillEl.style.width = `${results.percent}%`;
-            }
-          }, 100);
 
-          document.getElementById("btn-thermo-next").addEventListener("click", () => nextScreen());
-        }
-      },
+        </div></div>`;
+      },setup:()=>{
+        if(typeof gtag==="function")gtag('event','resultado_visualizado',{arquetipo:state.arquetipo});
+        if(typeof fbq==="function")fbq('trackCustom','ResultadoVisualizado',{arquetipo:state.arquetipo});
 
-      // 13. PERGUNTA 8 de 9 — Há quanto tempo (não pontua)
-      {
-        id: "P8",
-        type: "question",
-        render: () => `
-          <div class="screen">
-            <div class="question-header">
-              <span class="question-subtitle">Pergunta 8 de 9</span>
-              <h2 class="question-title">Há quanto tempo você convive com esse padrão?</h2>
-            </div>
-            <div class="options-list">
-              <button class="option-card" data-val="1">
-                <span class="option-emoji">🌱</span>
-                <span class="option-text">Faz pouco tempo que comecei a perceber isso com clareza.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="2">
-                <span class="option-emoji">📅</span>
-                <span class="option-text">Já faz alguns anos que percebo, mas nunca consegui mudar.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="3">
-                <span class="option-emoji">⏳</span>
-                <span class="option-text">Faz muito tempo. Às vezes parece que sempre foi assim.</span>
-                <div class="option-marker"></div>
-              </button>
-            </div>
-          </div>
-        `,
-        setup: () => setupSingleChoice("P8")
-      },
+        // TIMER REAL DE 18 MINUTOS
+        let totalSeconds = 18 * 60;
+        const timerEl = document.getElementById("timer-display");
+        const interval = setInterval(() => {
+          totalSeconds--;
+          if (totalSeconds <= 0) {
+            clearInterval(interval);
+            renderExpiredScreen();
+            return;
+          }
+          const m = Math.floor(totalSeconds / 60);
+          const s = totalSeconds % 60;
+          if (timerEl) timerEl.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+          if (totalSeconds <= 120 && timerEl) {
+            timerEl.style.color = "#ff6b6b";
+            timerEl.style.textShadow = "0 0 20px rgba(255,107,107,0.5)";
+          }
+        }, 1000);
 
-      // 14. PERGUNTA 9 de 9 — O que já tentou (não pontua)
-      {
-        id: "P9",
-        type: "question",
-        render: () => `
-          <div class="screen">
-            <div class="question-header">
-              <span class="question-subtitle">Pergunta 9 de 9</span>
-              <h2 class="question-title">O que você já tentou para mudar isso?</h2>
-            </div>
-            <div class="options-list">
-              <button class="option-card" data-val="1">
-                <span class="option-emoji">🛋️</span>
-                <span class="option-text">Terapia ou acompanhamento psicológico.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="2">
-                <span class="option-emoji">📚</span>
-                <span class="option-text">Livros, conteúdos, vídeos sobre o tema.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="3">
-                <span class="option-emoji">🧘</span>
-                <span class="option-text">Meditação, journaling ou práticas por conta própria.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="4">
-                <span class="option-emoji">💪</span>
-                <span class="option-text">Sinceramente, só força de vontade.</span>
-                <div class="option-marker"></div>
-              </button>
-              <button class="option-card" data-val="5">
-                <span class="option-emoji">🌟</span>
-                <span class="option-text">Ainda não tentei nada de verdade. Esse é meu primeiro passo.</span>
-                <div class="option-marker"></div>
-              </button>
-            </div>
-          </div>
-        `,
-        setup: () => setupSingleChoice("P9")
-      },
-
-      // 15. AFIRMAÇÃO 4 — Ponte para o resultado
-      {
-        id: "affirmation4",
-        type: "affirmation",
-        render: () => `
-          <div class="screen">
-            <div class="affirmation-box">
-              <span class="affirmation-badge">✧</span>
-              <h2 class="affirmation-text-lead">
-                Suas respostas formaram um padrão muito claro.<br><br>
-                Existe uma sombra específica operando por trás da sua autossabotagem, e ela tem nome, tem origem e tem uma forma de ser integrada.<br><br>
-                Seu resultado está pronto.
-              </h2>
-              <button id="btn-affirmation4-next" class="btn-primary">Ver meu resultado →</button>
-            </div>
-          </div>
-        `,
-        setup: () => {
-          document.getElementById("btn-affirmation4-next").addEventListener("click", () => nextScreen());
-        }
-      },
-
-      // 17. TELA DE ANÁLISE — Loading
-      {
-        id: "analysis",
-        type: "analysis",
-        render: () => `
-          <div class="screen">
-            <div class="analysis-container">
-              
-              <div class="spinner-ring-container" aria-hidden="true">
-                <div class="spinner-background-ring"></div>
-                <div class="spinner-spinning-ring"></div>
-                <div class="spinner-center-star">✧</div>
-              </div>
-              
-              <div class="analysis-steps-list">
-                <div class="analysis-step-row" id="loading-row-1">
-                  <span class="step-row-icon" id="loading-icon-1">&bull;</span>
-                  <span>Área de maior impacto identificada</span>
-                </div>
-                <div class="analysis-step-row" id="loading-row-2">
-                  <span class="step-row-icon" id="loading-icon-2">&bull;</span>
-                  <span>Padrão de autossabotagem mapeado</span>
-                </div>
-                <div class="analysis-step-row" id="loading-row-3">
-                  <span class="step-row-icon" id="loading-icon-3">&bull;</span>
-                  <span>Nível de impacto calculado</span>
-                </div>
-                <div class="analysis-step-row" id="loading-row-4">
-                  <span class="step-row-icon" id="loading-icon-4">&bull;</span>
-                  <span>Sombra dominante reconhecida</span>
-                </div>
-                <div class="analysis-step-row" id="loading-row-5">
-                  <span class="step-row-icon" id="loading-icon-5">&bull;</span>
-                  <span style="font-weight: 500;">Preparando seu resultado personalizado...</span>
-                </div>
-              </div>
-              
-            </div>
-          </div>
-        `,
-        setup: () => {
-          const delayBase = 600;
-          
-          // Animação sequencial um por um
-          const steps = [1, 2, 3, 4, 5];
-          steps.forEach((step, index) => {
-            setTimeout(() => {
-              const row = document.getElementById(`loading-row-${step}`);
-              if (row) {
-                row.classList.add("active");
-              }
-              
-              if (step < 5) {
-                setTimeout(() => {
-                  const completedRow = document.getElementById(`loading-row-${step}`);
-                  const completedIcon = document.getElementById(`loading-icon-${step}`);
-                  if (completedRow && completedIcon) {
-                    completedRow.classList.add("completed");
-                    completedIcon.innerHTML = "✓";
-                  }
-                }, 600);
-              }
-            }, index * delayBase);
+        const buyButton = document.getElementById("btn-buy-protocol");
+        if(buyButton){
+          buyButton.addEventListener("click",()=>{
+            fbq('track','InitiateCheckout');
+            if(typeof gtag==="function")gtag('event','botao_compra_clicado',{arquetipo:state.arquetipo,valor_total:19.90});
+            window.open('https://pay.kiwify.com.br/APFNbz9','_blank');
           });
-
-          // Duração total: 4000ms. Depois disso avança.
-          setTimeout(() => {
-            calculateResults();
-            nextScreen();
-          }, 4000);
         }
-      },
-
-      // 18. TELA DE RESULTADO — 4 variações dinâmicas
-      {
-        id: "result",
-        type: "result",
-        render: () => {
-          const winner = state.winnerProfile;
-          const template = LAUDO_TEMPLATES[winner] || LAUDO_TEMPLATES.A;
-          
-          const profileTitle = template.title;
-          const anchorPhrase = template.anchor;
-          
-          // Divide parágrafos com quebra de linha simples
-          const paragraphs = template.body.split("\n\n");
-          const injectedParagraphsHtml = paragraphs
-            .map(p => `<p class="result-paragraph">${injectVariables(p)}</p>`)
-            .join("");
-            
-          const injectedAnchor = injectVariables(anchorPhrase);
-          const injectedIntegration = injectVariables(template.integration);
-
-          // Texto específico por perfil para a transição
-          let profileSpecificText = "";
-          let sombraName = "";
-          if (winner === "A") {
-            profileSpecificText = "No Protocolo, o Dia 2 trabalha exatamente o ponto onde sua sombra nasceu: o momento em que proximidade virou perigo.";
-            sombraName = "Sombra do Abandono";
-          } else if (winner === "B") {
-            profileSpecificText = "O Protocolo começa no lugar onde a Sombra da Indignidade mais te prende: a crença de que você precisa merecer antes de receber.";
-            sombraName = "Sombra da Indignidade";
-          } else if (winner === "C") {
-            profileSpecificText = "O Dia 1 vai direto à origem do controle: não para você abandoná-lo, mas para entender o que ele tenta proteger.";
-            sombraName = "Sombra do Controle";
-          } else if (winner === "D") {
-            profileSpecificText = "O Dia 3 traz o exercício mais transformador para a Sombra da Invisibilidade: ocupar espaço de um jeito que seja seu, sem ser forçado.";
-            sombraName = "Sombra da Invisibilidade";
-          }
-
-          return `
-            <div class="screen">
-              <div class="result-outer-container">
-                
-                <!-- Cabeçalho do laudo com halo luminoso posterior -->
-                <header class="result-glow-header">
-                  <div class="result-glow-halo" aria-hidden="true"></div>
-                  <span class="result-top-badge">Diagnóstico Profundo</span>
-                  <h1 class="result-main-title">
-                    Mapeamento do Inconsciente
-                    <span class="profile-glow-name">${profileTitle}</span>
-                  </h1>
-                </header>
-
-                <!-- Orb Abstrato 3D de Integração -->
-                <div class="orb-visual-box" aria-hidden="true">
-                  <div class="orb-background-fog"></div>
-                  <div class="orb-core-sphere"></div>
-                </div>
-
-                <!-- Frase Âncora visceral -->
-                <div style="text-align: center; margin-bottom: 0;">
-                  <p class="result-paragraph" style="font-family: var(--font-serif); font-size: 1.4rem; color: var(--color-text-main); font-style: italic; line-height: 1.55; text-align: center;">
-                    "${injectedAnchor}"
-                  </p>
-                </div>
-                <!-- Botão de Ancoragem para Rolagem Suave -->
-                <div style="text-align: center; margin: 24px 0;">
-                  <button id="btn-scroll-to-sales" class="btn-buy-now" style="width: auto; padding: 0 36px; margin: 0; display: inline-flex;">
-                    Quero integrar minha sombra
-                  </button>
-                </div>
-
-                <!-- Corpo Narrativo do Perfil -->
-                <article class="result-text-article">
-                  ${injectedParagraphsHtml}
-                </article>
-
-                <!-- Bloco O que Muda (Cura/Integração) -->
-                <section class="integration-box-card">
-                  <h3 class="integration-box-title">O que muda quando você integra essa sombra</h3>
-                  <p class="integration-box-text">
-                    ${injectedIntegration}
-                  </p>
-                </section>
-
-                <section class="social-proof-section">
-
-                  <!-- Citação Brené Brown -->
-                  <div class="social-proof-quote-block">
-                    <p class="social-proof-expert-quote">
-                      "A vergonha prospera no segredo. Quando iluminamos o que escondemos, ela perde o poder."
-                    </p>
-                    <p class="social-proof-expert-name">— Brené Brown</p>
-                    <p class="social-proof-expert-credential">
-                      Pesquisadora de vulnerabilidade · Autora de 6 bestsellers no New York Times · 20+ milhões de visualizações no TED
-                    </p>
-                  </div>
-
-                  <!-- Depoimentos -->
-                  <div class="social-proof-testimonials">
-
-                    <div class="testimonial-card">
-                      <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
-                      <p class="testimonial-text">
-                        "Passei anos em terapia tentando entender por que eu sempre destruía relacionamentos quando ficavam sérios. Quando li sobre a sombra do abandono pela primeira vez, foi como alguém finalmente ligou a luz num quarto escuro. Era exatamente isso."
-                      </p>
-                      <p class="testimonial-author">— Carla S.</p>
-                    </div>
-
-                    <div class="testimonial-card">
-                      <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
-                      <p class="testimonial-text">
-                        "Eu achava que era preguiça. Que faltava disciplina. Quando entendi que o que me travava não vivia na minha mente consciente, tudo mudou. Não era fraqueza. Era um padrão que eu podia finalmente ver."
-                      </p>
-                      <p class="testimonial-author">— Pedro Cardoso</p>
-                    </div>
-
-                  </div>
-
-                </section>
-
-                <!-- Divisor Visual com Glow -->
-                <hr class="sales-divider" aria-hidden="true">
-
-                <!-- Tela de Transição para Vendas -->
-                <section class="sales-transition-block" id="sales-section">
-                  <h2 class="sales-transition-title">
-                    Identificar a sua sombra foi o primeiro passo.<br>
-                    <span class="color-int">O segundo é integrá-la.</span>
-                  </h2>
-                  <p class="sales-transition-paragraph">
-                    Saber qual sombra te sabota não faz ela parar. Você provavelmente já percebeu isso: entender nunca foi o seu problema. O que faltou foi um processo que chegasse onde a sombra realmente vive.
-                  </p>
-                  <p class="sales-transition-paragraph">
-                    Foi exatamente para isso que criamos o Protocolo de 3 Dias: um processo estruturado para você encontrar, dialogar e integrar a sombra que está operando por trás da sua autossabotagem. Não em anos. Em 3 dias.
-                  </p>
-                  <p class="sales-profile-paragraph">
-                    ${profileSpecificText}
-                  </p>
-                </section>
-
-                <!-- Cartão do Produto + Order Bump -->
-                <section class="product-card-wrapper">
-                  <div class="product-card">
-                    <span class="product-card-label">TRABALHO INTERIOR · PROTOCOLO</span>
-                    <h3 class="product-card-title">O Protocolo dos 3 Dias</h3>
-                    <p class="product-card-subtitle">Três dias. Um protocolo. Uma sombra integrada.</p>
-                    
-                    <ul class="product-features-list">
-                      <li>
-                        <span class="feature-emoji">🌑</span>
-                        <span class="feature-text">O protocolo completo dos 3 dias, com processo e exercício central por dia</span>
-                      </li>
-                      <li>
-                        <span class="feature-emoji">📍</span>
-                        <span class="feature-text">Cada dia tem um objetivo claro, uma prática específica e um comprometimento real</span>
-                      </li>
-                      <li>
-                        <span class="feature-emoji">🧠</span>
-                        <span class="feature-text">Linguagem direta, sem misticismo e sem jargão de terapia</span>
-                      </li>
-                      <li>
-                        <span class="feature-emoji">⚡</span>
-                        <span class="feature-text">Acesso imediato em PDF, você executa hoje</span>
-                      </li>
-                    </ul>
-                    
-                    <div class="product-price-block">
-                      <span class="price-old">R$ 97</span>
-                      <span class="price-current">R$ 27</span>
-                      <span class="price-microcopy">Oferta disponível apenas nesta página.</span>
-                    </div>
-                    
-                    <button id="btn-buy-protocol" class="btn-buy-now">QUERO EXECUTAR O PROTOCOLO →</button>
-                    
-                    <div class="product-guarantees">
-                      <p>🔒  Pagamento 100% seguro</p>
-                      <p>↩️  Garantia de 7 dias. Se não fizer sentido pra você, devolvemos.</p>
-                    </div>
-                  </div>
-                  
-                  <!-- Order Bump Section -->
-                  <div class="order-bump">
-                    <div class="bump-container">
-                      <div class="bump-checkbox-wrapper">
-                        <div id="bump-checkbox" class="bump-styled-checkbox checked" role="checkbox" aria-checked="true" tabindex="0">
-                          <span class="bump-check-mark">✓</span>
-                        </div>
-                      </div>
-                      
-                      <div class="bump-content">
-                        <p class="bump-title">Sim, adicionar o Pack de Prompts de IA por +R$ 17</p>
-                        <p class="bump-description">
-                          Mais de 30 prompts prontos para fazer shadow work com qualquer IA, com uma trilha específica para integrar sua ${sombraName}. Funciona com ChatGPT, Claude ou qualquer IA de texto.
-                        </p>
-                        <p class="bump-microcopy">Adicionado automaticamente ao pedido. Desmarque se não quiser.</p>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-              </div>
-            </div>
-          `;
-        },
-        setup: () => {
-          // Scroll suave para a seção de venda
-          const btnScroll = document.getElementById("btn-scroll-to-sales");
-          if (btnScroll) {
-            btnScroll.addEventListener("click", () => {
-              const salesSec = document.getElementById("sales-section");
-              if (salesSec) {
-                salesSec.scrollIntoView({ behavior: "smooth" });
-              }
-            });
-          }
-
-          const bumpCheckbox = document.getElementById("bump-checkbox");
-          let upsellAccepted = true;
-          
-          if (bumpCheckbox) {
-            bumpCheckbox.addEventListener("click", () => {
-              upsellAccepted = !upsellAccepted;
-              if (upsellAccepted) {
-                bumpCheckbox.classList.add("checked");
-                bumpCheckbox.setAttribute("aria-checked", "true");
-              } else {
-                bumpCheckbox.classList.remove("checked");
-                bumpCheckbox.setAttribute("aria-checked", "false");
-              }
-            });
-            
-            // Keydown support
-            bumpCheckbox.addEventListener("keydown", (e) => {
-              if (e.key === " " || e.key === "Enter") {
-                e.preventDefault();
-                bumpCheckbox.click();
-              }
-            });
-          }
-          
-          const buyButton = document.getElementById("btn-buy-protocol");
-          if (buyButton) {
-            buyButton.addEventListener("click", () => {
-              const valorBase = 27;
-              const valorUpsell = upsellAccepted ? 17 : 0;
-              const valorTotal = valorBase + valorUpsell;
-              
-              let perfilName = "";
-              if (state.winnerProfile === "A") perfilName = "Sombra do Abandono";
-              else if (state.winnerProfile === "B") perfilName = "Sombra da Indignidade";
-              else if (state.winnerProfile === "C") perfilName = "Sombra do Controle";
-              else if (state.winnerProfile === "D") perfilName = "Sombra da Invisibilidade";
-
-              console.log("Compra Efetuada:", {
-                produto: "Protocolo de 3 Dias",
-                valor: valorBase,
-                upsell: upsellAccepted,
-                valorUpsell: valorUpsell,
-                valorTotal: valorTotal,
-                perfil: perfilName
-              });
-              
-              // Dispara o Pixel do Facebook para InitiateCheckout
-              fbq('track', 'InitiateCheckout');
-              
-              // Abre o checkout da Kiwify em nova aba
-              window.open('https://pay.kiwify.com.br/APFNbz9', '_blank');
-              
-              // Exibir tela de confirmação simples
-              renderConfirmationScreen();
-            });
-          }
-        }
-      }
+      }}
     ];
 
-    // --- SETUP PARA AS SELEÇÕES ÚNICAS (P1, P2, P3, P4, P5, P6, P8, P9) ---
+    // --- SETUP PARA AS SELEÇÕES ÚNICAS ---
     function setupSingleChoice(questionId) {
       const cards = document.querySelectorAll(".option-card");
       const savedResponse = state.responses[questionId];
@@ -2580,6 +1782,41 @@
           }, 350);
         });
       });
+    }
+
+    // --- SETUP PARA SELEÇÃO MÚLTIPLA GENÉRICA (Q9, Q21) ---
+    function setupMultipleChoiceGeneric(questionId) {
+      const cards = document.querySelectorAll(".option-card");
+      const nextBtn = document.getElementById(`btn-${questionId.toLowerCase()}-next`);
+      let selectedIndices = state.responses[questionId] || [];
+
+      if (selectedIndices.length > 0) {
+        cards.forEach(card => {
+          const idx = parseInt(card.getAttribute("data-index"));
+          if (selectedIndices.includes(idx)) card.classList.add("selected");
+        });
+        if (nextBtn) { nextBtn.classList.remove("hidden-btn"); nextBtn.classList.add("show-btn"); }
+      }
+
+      cards.forEach(card => {
+        card.addEventListener("click", () => {
+          const idx = parseInt(card.getAttribute("data-index"));
+          if (card.classList.contains("selected")) {
+            card.classList.remove("selected");
+            selectedIndices = selectedIndices.filter(i => i !== idx);
+          } else {
+            card.classList.add("selected");
+            selectedIndices.push(idx);
+          }
+          state.responses[questionId] = selectedIndices;
+          if (nextBtn) {
+            if (selectedIndices.length > 0) { nextBtn.classList.remove("hidden-btn"); nextBtn.classList.add("show-btn"); }
+            else { nextBtn.classList.remove("show-btn"); nextBtn.classList.add("hidden-btn"); }
+          }
+        });
+      });
+
+      if (nextBtn) { nextBtn.addEventListener("click", () => nextScreen()); }
     }
 
     // --- SETUP PARA SELEÇÃO MÚLTIPLA (P7) ---
@@ -2645,7 +1882,7 @@
 
     // --- RENDERIZADOR DO BOTÃO DE VOLTAR INLINE ---
     function renderBackButton(screen) {
-      const noBackScreens = ["analysis", "result"];
+      const noBackScreens = ["analysis","email","checkout1","checkout2","checkout3","checkout4","checkout5","checkout6","result"];
       
       if (state.currentScreenIndex === 0 || noBackScreens.includes(screen.id)) {
         backButtonContainer.innerHTML = "";
@@ -2685,40 +1922,23 @@
 
     // --- MAPA DE NOMES LEGÍVEIS PARA CADA TELA ---
     const SCREEN_LABELS = {
-      "entry":        "Entrada",
-      "P1":           "Pergunta_1",
-      "jung1":        "Jung_1",
-      "P2":           "Pergunta_2",
-      "P3":           "Pergunta_3",
-      "jung2":        "Jung_2",
-      "P4":           "Pergunta_4",
-      "P5":           "Pergunta_5",
-      "P6":           "Pergunta_6",
-      "jung3":        "Jung_3",
-      "P7":           "Pergunta_7",
-      "thermometer":  "Termometro",
-      "P8":           "Pergunta_8",
-      "P9":           "Pergunta_9",
-      "affirmation4": "Afirmacao_4",
-      "analysis":     "Analise",
-      "result":       "Resultado"
+      "Q1":"Pergunta_1","social_proof":"Prova_Social","Q2":"Pergunta_2",
+      "q2_response":"Resposta_Q2","Q3":"Pergunta_3","Q4":"Pergunta_4",
+      "Q5":"Pergunta_5","Q6":"Pergunta_6","Q7":"Pergunta_7","jung1":"Jung_1",
+      "Q8":"Pergunta_8","Q9":"Pergunta_9","Q10":"Pergunta_10","Q11":"Pergunta_11",
+      "Q12":"Pergunta_12","Q13":"Pergunta_13","jung2":"Jung_2","Q14":"Pergunta_14",
+      "Q15":"Pergunta_15","Q16":"Pergunta_16","Q17":"Pergunta_17","jung3":"Jung_3",
+      "Q18":"Pergunta_18","Q19":"Pergunta_19","Q20":"Pergunta_20","Q21":"Pergunta_21",
+      "citation_q21":"Citacao_Q21","Q22":"Pergunta_22","Q23":"Pergunta_23",
+      "analysis":"Analise","email":"Email","checkout1":"Checkout_1",
+      "checkout2":"Checkout_2","checkout3":"Checkout_3","checkout4":"Checkout_4",
+      "checkout5":"Checkout_5","checkout6":"Checkout_6","result":"Resultado"
     };
 
     function trackScreen(screenId) {
       const label = SCREEN_LABELS[screenId] || screenId;
-
-      // Meta Pixel — evento customizado por tela
-      if (typeof fbq === "function") {
-        fbq('trackCustom', 'QuizStep', { step: label });
-      }
-
-      // GA4 — evento por tela
-      if (typeof gtag === "function") {
-        gtag('event', 'quiz_step', {
-          step_name: label,
-          step_id: screenId
-        });
-      }
+      if (typeof fbq === "function") fbq('trackCustom', 'QuizStep', { step: label });
+      if (typeof gtag === "function") gtag('event', 'quiz_step', { step_name: label, step_id: screenId });
     }
 
     function injectAndSetupScreen(screen) {
@@ -2737,7 +1957,7 @@
       updateProgressBar(screen);
       renderBackButton(screen);
 
-      // Tracking de funil — dispara ao entrar em cada tela
+      // Tracking por tela
       trackScreen(screen.id);
 
       if (screen.setup) {
@@ -2761,6 +1981,42 @@
     }
 
     // --- TELA DE CONFIRMAÇÃO DO PROTOCOLO ---
+    // --- TELA DE OFERTA EXPIRADA ---
+    function renderExpiredScreen() {
+      progressContainer.classList.add("hidden");
+      backButtonContainer.innerHTML = "";
+      body.classList.remove("affirmation-mode");
+      screenViewport.innerHTML = `
+        <div class="screen" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:20px 0;">
+          <span style="font-size:3rem;margin-bottom:16px;">⏰</span>
+          <h2 style="font-family:var(--font-serif);font-size:1.8rem;color:var(--color-text-main);line-height:1.35;margin-bottom:16px;">A oferta com desconto expirou.</h2>
+          <p style="font-size:1rem;color:var(--color-text-secondary);line-height:1.7;max-width:420px;margin-bottom:32px;">
+            O tempo para o preço especial de R$ 19,90 encerrou. Mas você ainda pode acessar o Protocolo pelo valor original.
+          </p>
+          <div style="background:var(--color-bg-product);border:1px solid var(--color-border);border-radius:20px;padding:28px 24px;width:100%;max-width:440px;margin-bottom:24px;">
+            <h3 style="font-family:var(--font-serif);font-size:1.5rem;color:var(--color-text-main);margin-bottom:8px;">O Protocolo dos 3 Dias</h3>
+            <div style="font-family:var(--font-serif);font-size:2.8rem;font-weight:700;color:var(--color-text-main);margin:16px 0;">R$ 109,90</div>
+            <button id="btn-buy-expired" class="btn-buy-now" style="font-size:1rem;min-height:56px;">
+              ACESSAR O PROTOCOLO →
+            </button>
+            <div style="margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px;">
+              <span style="font-size:1.1rem;">🛡️</span>
+              <p style="font-size:0.8rem;color:var(--color-text-secondary);">Garantia de 7 dias · Pagamento 100% seguro</p>
+            </div>
+          </div>
+        </div>
+      `;
+      const btn = document.getElementById("btn-buy-expired");
+      if(btn){
+        btn.addEventListener("click",()=>{
+          fbq('track','InitiateCheckout');
+          if(typeof gtag==="function")gtag('event','compra_apos_expiracao',{arquetipo:state.arquetipo});
+          window.open('https://pay.kiwify.com.br/APFNbz9','_blank');
+        });
+      }
+    }
+
+    // --- TELA DE CONFIRMAÇÃO ---
     function renderConfirmationScreen() {
       progressContainer.classList.add("hidden");
       backButtonContainer.innerHTML = "";

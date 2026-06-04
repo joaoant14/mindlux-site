@@ -1625,7 +1625,13 @@
           err.style.display="none";
           state.email=email;
           const arqNome=ARQUETIPOS[state.arquetipo]?.nome||state.arquetipo;
-          fetch(SHEETS_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,arquetipo:arqNome,impacto:state.impacto+"%",autoconfianca:state.autoconfianca,pessimismo:state.pessimismo+"%"})}).catch(()=>{});
+          const formData = new FormData();
+          formData.append('email', email);
+          formData.append('arquetipo', arqNome);
+          formData.append('impacto', state.impacto + '%');
+          formData.append('autoconfianca', state.autoconfianca);
+          formData.append('pessimismo', state.pessimismo + '%');
+          fetch(SHEETS_URL, {method: 'POST', mode: 'no-cors', body: formData}).catch(()=>{});
           if(typeof gtag==="function")gtag('event','email_capturado',{arquetipo:arqNome});
           if(typeof fbq==="function")fbq('track','Lead');
           nextScreen();
@@ -1723,7 +1729,7 @@
                     <span style="background:rgba(26,158,110,0.2);color:#22B8A0;font-size:0.8rem;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid rgba(34,184,160,0.3);">-82%</span>
                   </div>
                   <div style="font-family:var(--font-serif);font-size:4rem;font-weight:700;color:var(--color-text-main);line-height:1;">R$ 19,90</div>
-                  <p style="font-size:0.82rem;color:var(--color-text-secondary);margin-top:6px;">menos de R$ 0,70 por dia de protocolo</p>
+                  <p style="font-size:0.82rem;color:var(--color-text-secondary);margin-top:6px;">3 dias de protocolo completo por menos de R$ 20</p>
                 </div>
 
                 <button id="btn-buy-protocol" class="btn-buy-now" style="margin-top:20px;font-size:1.05rem;min-height:60px;border-radius:14px;">
